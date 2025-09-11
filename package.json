@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^2.0.18",
     "@auth/drizzle-adapter": "^1.7.2",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
@@ -27,6 +28,7 @@
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
     "@vercel/functions": "^3.1.0",
+    "ai": "^5.0.40",
     "drizzle-orm": "^0.41.0",
     "grammy": "^1.38.1",
     "next": "^15.2.3",
