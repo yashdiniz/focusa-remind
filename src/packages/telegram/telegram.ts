@@ -28,9 +28,10 @@ export async function botIsTyping(bot: Bot, chatId: string): Promise<NodeJS.Time
 export async function botSendMessage(bot: Bot, chatId: string, text: string,
     messageId?: number, interval?: NodeJS.Timeout): Promise<Message.TextMessage> {
     const message = await bot.api.sendMessage(chatId, text,
-        messageId ? {
-            reply_to_message_id: messageId,
-        } : undefined
+        {
+            reply_parameters: messageId ? { message_id: messageId } : undefined,
+            parse_mode: 'MarkdownV2',
+        }
     );
     if (interval) {
         clearInterval(interval);
