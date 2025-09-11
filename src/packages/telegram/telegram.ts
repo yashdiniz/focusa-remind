@@ -11,7 +11,7 @@ import type { Message } from "grammy/types";
 export async function botIsTyping(bot: Bot, chatId: string): Promise<NodeJS.Timeout> {
     await bot.api.sendChatAction(chatId, 'typing');
     const interval = setInterval(() => {
-        bot.api.sendChatAction(chatId, 'typing');
+        bot.api.sendChatAction(chatId, 'typing').catch(console.error);
     }, 5000)
     return interval;
 }
