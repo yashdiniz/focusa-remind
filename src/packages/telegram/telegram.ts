@@ -30,7 +30,7 @@ export async function botSendMessage(bot: Bot, chatId: string, text: string,
     const message = await bot.api.sendMessage(chatId, text,
         {
             reply_parameters: messageId ? { message_id: messageId } : undefined,
-            parse_mode: 'MarkdownV2',
+            parse_mode: 'Markdown',
         }
     );
     if (interval) {
