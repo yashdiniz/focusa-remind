@@ -10,7 +10,7 @@ export async function generateResponse(chatId: string, userInput: string): Promi
                 reasoningEffort: 'default',
                 parallelToolCalls: true, // Enable parallel function calling (default: true)
                 user: chatId, // Unique identifier for end-user (optional)
-                serviceTier: 'auto', // Use flex tier for higher throughput (optional)
+                serviceTier: 'on_demand', // Use flex tier for higher throughput (optional)
             },
         },
         prompt: [
