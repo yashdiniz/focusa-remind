@@ -1,17 +1,17 @@
-import { Bot } from "grammy";
+import type { Bot } from "grammy";
 import type { Message } from "grammy/types";
 
 /**
  * Simulates the bot typing action in a Telegram chat.
  * REMEMBER TO CLEAR THE INTERVAL AFTER USE TO STOP THE TYPING ACTION.
  * @param bot grammy bot instance
- * @param ctx context of the message
+ * @param chatId chat ID to send the typing action to
  * @returns interval ID to clear later
  */
-export async function botIsTyping(bot: Bot, ctx: any): Promise<NodeJS.Timeout> {
-    await bot.api.sendChatAction(ctx.chatId, 'typing');
-    const interval = setInterval(async () => {
-        await bot.api.sendChatAction(ctx.chatId, 'typing');
+export async function botIsTyping(bot: Bot, chatId: string): Promise<NodeJS.Timeout> {
+    await bot.api.sendChatAction(chatId, 'typing');
+    const interval = setInterval(() => {
+        bot.api.sendChatAction(chatId, 'typing');
     }, 5000)
     return interval;
 }
