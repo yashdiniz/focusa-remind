@@ -17,7 +17,7 @@ const bot = new Bot(token);
 bot.on('message:text', async (ctx) => {
     const interval = await botIsTyping(bot, ctx.chatId.toString());
     console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text);
-    const result = await generateResponse(ctx.chatId.toString(), ctx.message.text);
+    const result = await generateResponse(ctx.message.text, ctx.chatId.toString());
     waitUntil(
         botSendMessage(bot, ctx.chatId.toString(), result.trim(),
             ctx.message.message_id, interval) // Echo the received message
