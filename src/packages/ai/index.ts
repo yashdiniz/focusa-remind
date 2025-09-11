@@ -3,7 +3,7 @@ import { delay } from '@ai-sdk/provider-utils';
 import { generateText, type ModelMessage } from 'ai';
 
 export const SYSTEM_PROMPT = `You are a helpful assistant.`
-const MAX_OUTPUT_TOKENS = 512;
+const MAX_OUTPUT_TOKENS = 1024;
 
 /**
  * Generates a response from the AI model.
