@@ -5,7 +5,7 @@ import { tool } from "ai";
 export const eval_math_expression = tool({
     name: "eval_math_expression",
     description: 'A tool for evaluating mathematical expressions. Example expressions: ' + "'1.2 * (2 + 4.5)', '12.7 cm to inch', 'sin(45 deg) ^ 2'.",
-    inputSchema: z.object({ expression: z.string().min(1, "Expression is required") }),
+    inputSchema: z.object({ expression: z.string() }),
     execute: async ({ expression }) => {
         try {
             const result = evaluate(expression) as { toString(): string };
