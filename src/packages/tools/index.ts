@@ -11,7 +11,6 @@ export const eval_math_expression = tool({
             const result = evaluate(expression) as { toString(): string };
             if (typeof result === "object" && typeof result.toString === "function") {
                 return {
-                    role: "tool",
                     content: [{ type: "text", text: result.toString() }],
                 };
             }
@@ -19,7 +18,6 @@ export const eval_math_expression = tool({
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : String(e);
             return {
-                role: "tool",
                 content: [{ type: "text", text: `Error: ${message}` }],
             };
         }

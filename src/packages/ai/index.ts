@@ -3,7 +3,7 @@ import { delay } from '@ai-sdk/provider-utils';
 import { generateText, type ModelMessage } from 'ai';
 import * as tools from '../tools';
 
-export const SYSTEM_PROMPT = `You are a helpful assistant.`;
+export const SYSTEM_PROMPT = `You are a helpful assistant. Call tools only when necessary. Only use the eval_math_expression tool when the user asks a clear math or unit conversion question. Do not use tools when the user asks a question unrelated to math or unit conversion.`;
 const MAX_OUTPUT_TOKENS = 1024;
 const model = groq('gemma2-9b-it');
 
@@ -26,7 +26,6 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
             },
         },
-        tools,
         system: system ?? SYSTEM_PROMPT,
         prompt,
     });
