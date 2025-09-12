@@ -1,8 +1,9 @@
 import { groq } from '@ai-sdk/groq';
 import { delay } from '@ai-sdk/provider-utils';
 import { generateText, type ModelMessage } from 'ai';
+import * as tools from '../tools';
 
-export const SYSTEM_PROMPT = `You are a helpful assistant.`
+export const SYSTEM_PROMPT = `You are a helpful assistant. Respond without markdown formatting, prefer plain text.`;
 const MAX_OUTPUT_TOKENS = 1024;
 const model = groq('gemma2-9b-it');
 
@@ -25,6 +26,7 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
             },
         },
+        tools,
         system: system ?? SYSTEM_PROMPT,
         prompt,
     });
@@ -33,7 +35,7 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
 }
 
 /**
- * Generates a response from he provided messages.
+ * Generates a response from the provided messages.
  * @param messages Message input from the user.
  * @param chatId Optional chat ID for user identification.
  * @returns Response text from the AI model.
@@ -46,6 +48,7 @@ export async function replyFromHistory(messages: ModelMessage[], chatId?: string
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
             },
         },
+        tools,
         messages,
     });
     if (usage.outputTokens) {
