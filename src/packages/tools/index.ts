@@ -9,7 +9,7 @@ export const eval_math_expression = tool({
     execute: async ({ expression }) => {
         try {
             const result = evaluate(expression) as { toString(): string };
-            if (typeof result === "object" && typeof result.toString === "function") {
+            if (typeof result.toString === "function") {
                 return {
                     content: [{ type: "text", text: result.toString() }],
                 };
