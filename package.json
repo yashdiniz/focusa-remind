@@ -24,6 +24,7 @@
   "dependencies": {
     "@ai-sdk/groq": "^2.0.18",
     "@auth/drizzle-adapter": "^1.7.2",
+    "@modelcontextprotocol/sdk": "^1.18.0",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
     "@trpc/client": "^11.0.0",
@@ -33,6 +34,8 @@
     "ai": "^5.0.40",
     "drizzle-orm": "^0.41.0",
     "grammy": "^1.38.1",
+    "mathjs": "^14.7.0",
+    "mcp-handler": "^1.0.2",
     "next": "^15.2.3",
     "next-auth": "5.0.0-beta.25",
     "postgres": "^3.4.4",
@@ -40,7 +43,7 @@
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",
-    "zod": "^3.24.2"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
