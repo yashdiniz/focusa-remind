@@ -41,7 +41,7 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
  * @returns Response text from the AI model.
  */
 export async function replyFromHistory(messages: ModelMessage[], chatId?: string): Promise<string> {
-    const { usage, text, toolCalls, toolResults, content } = await generateText({
+    const { usage, text, content } = await generateText({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
         providerOptions: {
             groq: {
@@ -54,6 +54,6 @@ export async function replyFromHistory(messages: ModelMessage[], chatId?: string
     if (usage.outputTokens) {
         await delay(5000 * usage.outputTokens / MAX_OUTPUT_TOKENS); // Simulate typing delay based on output tokens
     }
-    console.log('AI response:', usage, text, toolCalls, toolResults, content);
+    console.log(usage, 'AI response:', text, JSON.stringify(content));
     return text;
 }
