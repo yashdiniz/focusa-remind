@@ -5,7 +5,7 @@ import { env } from '@/env';
 import { botIsTyping, botSendMessage } from '@/packages/telegram';
 import { Bot, webhookCallback } from 'grammy';
 import { waitUntil } from '@vercel/functions';
-import { generateResponse, SYSTEM_PROMPT } from '@/packages/ai';
+import { replyFromHistory, SYSTEM_PROMPT } from '@/packages/ai';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -18,7 +18,7 @@ bot.on('message:text', async (ctx) => {
     const interval = await botIsTyping(bot, ctx.chatId.toString());
     console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text);
     // TODO: Get message history from a database
-    const result = await generateResponse([
+    const result = await replyFromHistory([
         {
             role: 'system',
             content: SYSTEM_PROMPT,

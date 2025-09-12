@@ -1,4 +1,4 @@
-import { generateResponse } from ".";
+import { replyFromHistory } from ".";
 
 // Mock the 'ai' module and its generateText function
 jest.mock('ai', () => ({
@@ -7,16 +7,19 @@ jest.mock('ai', () => ({
 
 import { generateText } from 'ai';
 
-describe('generateResponse', () => {
+describe('replyFromHistory', () => {
     it('should return the text from the AI response', async () => {
         // Arrange
         const chatId = 'chat123';
-        const userInput = 'Hi there!';
+        const userInput: { role: "system" | "user"; content: string }[] = [
+            { role: 'system', content: 'You are a helpful assistant.' },
+            { role: 'user', content: 'Hello, AI!' }
+        ];
         // set up the mock return value
         (generateText as jest.Mock).mockResolvedValue({ text: 'Hello, user!' });
 
         // Act
-        const actual = await generateResponse(chatId, userInput);
+        const actual = await replyFromHistory(userInput, chatId);
 
         // Assert
         expect(actual).toBe('Hello, user!');
