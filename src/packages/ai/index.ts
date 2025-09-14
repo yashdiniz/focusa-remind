@@ -3,9 +3,9 @@ import { delay } from '@ai-sdk/provider-utils';
 import { generateText, type ModelMessage } from 'ai';
 import { tools } from '../tools';
 
-export const SYSTEM_PROMPT = `You are a helpful assistant. Call tools only when necessary. Only use the eval_math_expression tool when the user asks a clear math or unit conversion question. Do not use tools when the user asks a question unrelated to math or unit conversion.`;
+export const SYSTEM_PROMPT = `You are a helpful assistant. Call tools only when necessary.`;
 const MAX_OUTPUT_TOKENS = 1024;
-const model = groq('gemma2-9b-it');
+const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
 
 /**
  * Generate a response from the AI model.
@@ -40,6 +40,7 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
  * @returns Response text from the AI model.
  */
 export async function replyFromHistory(messages: ModelMessage[], chatId?: string): Promise<string> {
+    // TODO: add reAct tool calling
     const { usage, text, content } = await generateText({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
         providerOptions: {
