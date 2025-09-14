@@ -3,7 +3,7 @@ import { delay } from '@ai-sdk/provider-utils';
 import { generateText, type ModelMessage } from 'ai';
 import { tools } from '../tools';
 
-export const SYSTEM_PROMPT = `You are a helpful assistant. Call tools only when necessary.`;
+export const SYSTEM_PROMPT = `You are a helpful assistant. Call tools only when necessary. Answer in plain text, no markdown.`;
 const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
 
