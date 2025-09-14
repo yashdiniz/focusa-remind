@@ -19,8 +19,8 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
         providerOptions: {
             groq: {
-                reasoningFormat: 'parsed',
-                reasoningEffort: 'default',
+                // reasoningFormat: 'parsed',
+                // reasoningEffort: 'default',
                 // serviceTier: 'on_demand', // Use flex tier for higher throughput (optional)
                 // parallelToolCalls: true, // Enable parallel function calling (default: true)
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
