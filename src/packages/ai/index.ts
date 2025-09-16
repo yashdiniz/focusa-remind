@@ -1,5 +1,5 @@
 import { groq } from '@ai-sdk/groq';
-import { generateText, type GenerateTextResult, type ModelMessage } from 'ai';
+import { generateText, stepCountIs, type GenerateTextResult, type ModelMessage } from 'ai';
 import { tools } from '@/packages/tools';
 import { generateSystemPrompt } from '@/packages/prompts';
 
@@ -25,6 +25,7 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
             },
         },
+        stopWhen: stepCountIs(3), // Stop after 3 steps (tool call + tool response + final text)
         system: system ?? generateSystemPrompt(""),
         prompt,
     });
@@ -48,6 +49,7 @@ export async function replyFromHistory(messages: ModelMessage[], chatId?: string
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
             },
         },
+        stopWhen: stepCountIs(3), // Stop after 3 steps (tool call + tool response + final text)
         tools,
         messages,
     });
