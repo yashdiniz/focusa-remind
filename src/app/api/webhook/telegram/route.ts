@@ -5,7 +5,9 @@ import { env } from '@/env';
 import { botIsTyping, botSendMessage } from '@/packages/telegram';
 import { Bot, webhookCallback } from 'grammy';
 import { waitUntil } from '@vercel/functions';
-import { replyFromHistory, SYSTEM_PROMPT } from '@/packages/ai';
+import { replyFromHistory, MAX_OUTPUT_TOKENS } from '@/packages/ai';
+import { delay } from '@ai-sdk/provider-utils';
+import { generateSystemPrompt } from '@/packages/prompts';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -21,17 +23,21 @@ bot.on('message:text', async (ctx) => {
     const result = await replyFromHistory([
         {
             role: 'system',
-            content: SYSTEM_PROMPT,
+            content: generateSystemPrompt(""),
         },
         {
             role: 'user',
             content: ctx.message.text,
         }
     ], ctx.chatId.toString());
-    waitUntil(
-        botSendMessage(bot, ctx.chatId.toString(), result.trim(),
+
+    waitUntil((async () => {
+        if (result.usage.outputTokens) {
+            await delay(10000 * result.usage.outputTokens / MAX_OUTPUT_TOKENS); // Simulate typing delay based on output tokens
+        }
+        await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(),
             ctx.message.message_id, interval) // Echo the received message
-    );
+    })());
 });
 
 export const POST = webhookCallback(bot, 'std/http');
