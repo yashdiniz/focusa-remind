@@ -3,7 +3,7 @@ import { replyFromHistory } from "@/packages/ai";
 import { modelMessageSchema } from "ai";
 import type { NextRequest } from "next/server";
 
-const inputSchema = modelMessageSchema.array().min(2);
+const inputSchema = modelMessageSchema.array().min(1);
 
 export async function POST(req: NextRequest) {
     // Simple auth for testing endpoint
