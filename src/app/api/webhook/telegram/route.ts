@@ -19,6 +19,9 @@ const bot = new Bot(token);
 bot.on('message:text', async (ctx) => {
     const interval = await botIsTyping(bot, ctx.chatId.toString());
     console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text);
+
+    // read the message to mark it as read (prevents spamming of under)
+    await ctx.readBusinessMessage();
     // TODO: Get message history from a database
     const result = await replyFromHistory([
         {
