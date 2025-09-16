@@ -1,5 +1,6 @@
 import { env } from "@/env";
 import { replyFromHistory } from "@/packages/ai";
+import { generateSystemPrompt } from "@/packages/prompts";
 import { modelMessageSchema } from "ai";
 import type { NextRequest } from "next/server";
 
@@ -23,7 +24,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Call the AI with the message history
-    const result = await replyFromHistory(res.data, "testChat")
+    const result = await replyFromHistory([
+        {
+            role: "system",
+            content: generateSystemPrompt(""),
+        },
+        ...res.data,
+    ], "testChat")
     return new Response(JSON.stringify(result), {
         status: 200,
         headers: {
