@@ -1,10 +1,9 @@
 import { groq } from '@ai-sdk/groq';
-import { delay } from '@ai-sdk/provider-utils';
-import { generateText, type ModelMessage } from 'ai';
-import { tools } from '../tools';
+import { generateText, type GenerateTextResult, type ModelMessage } from 'ai';
+import { tools } from '@/packages/tools';
+import { generateSystemPrompt } from '@/packages/prompts';
 
-export const SYSTEM_PROMPT = `You are a helpful assistant. Call tools only when necessary. Answer in plain text, no markdown.`;
-const MAX_OUTPUT_TOKENS = 1024;
+export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
 
 /**
@@ -26,22 +25,23 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
                 user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
             },
         },
-        system: system ?? SYSTEM_PROMPT,
+        system: system ?? generateSystemPrompt(""),
         prompt,
     });
     console.log('AI response:', text);
     return text;
 }
 
+type TOOLS = typeof tools;
 /**
  * Generates a response from the provided messages.
  * @param messages Message input from the user.
  * @param chatId Optional chat ID for user identification.
  * @returns Response text from the AI model.
  */
-export async function replyFromHistory(messages: ModelMessage[], chatId?: string): Promise<string> {
+export async function replyFromHistory(messages: ModelMessage[], chatId?: string): Promise<GenerateTextResult<TOOLS, string>> {
     // TODO: add reAct tool calling
-    const { usage, text, content } = await generateText({
+    const result = await generateText({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
         providerOptions: {
             groq: {
@@ -51,9 +51,7 @@ export async function replyFromHistory(messages: ModelMessage[], chatId?: string
         tools,
         messages,
     });
-    if (usage.outputTokens) {
-        await delay(5000 * usage.outputTokens / MAX_OUTPUT_TOKENS); // Simulate typing delay based on output tokens
-    }
-    console.log(usage, 'AI response:', text, JSON.stringify(content));
-    return text;
+    console.log(result.usage, 'AI response:', result.text);
+    console.log('AI content:', JSON.stringify(result.content));
+    return result;
 }
