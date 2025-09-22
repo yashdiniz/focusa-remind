@@ -13,7 +13,7 @@ export const env = createEnv({
         : z.string().optional(),
     // AUTH_DISCORD_ID: z.string(),
     // AUTH_DISCORD_SECRET: z.string(),
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.url(),
     GROQ_API_KEY: z.string(),
     TELEGRAM_BOT_TOKEN: z.string(),
     NODE_ENV: z
