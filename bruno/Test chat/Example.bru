@@ -5,7 +5,98 @@ meta {
 }
 
 post {
-  url: {{hostname}}/testchat
-  body: none
+  url: http://localhost:3000/api/testchat
+  body: json
   auth: inherit
+}
+
+body:json {
+  [
+    {
+      "role": "system",
+      "content": "This is the first interaction with the user. It is Thursday, 2025-09-18T16:32:04.783Z right now."
+    },
+    {
+      "role": "user",
+      "content": "Call me Yash. Prefer English, from India."
+    },
+    {
+      "role": "assistant",
+      "content": "Let's get started with the onboarding process. I just need to confirm a few details from you. \n\nTo better assist you, could you please tell me your preferred timezone in the tz database format, like 'America/New_York' or 'Asia/Kolkata'? \n\nAlso, I'm assuming you prefer English as your language, and you're from India, correct? \n\nOne more thing, I want to let you know that we will have daily check-ins to help you stay on track with your goals. \n\nLet's get this information confirmed, and then we can proceed with setting up your goals and reminders."
+    },
+    {
+      "role": "user",
+      "content": "I'm not really sure what my timezone is... I'm from India."
+    },
+    {
+      "role": "assistant",
+      "content": "India has a single timezone, which is Indian Standard Time (IST). It is UTC+5:30. \n\nIn the tz database format, the timezone for India is 'Asia/Kolkata'. \n\nSo, I'll use 'Asia/Kolkata' as your timezone. \n\nNow, let's confirm your details: \n\nName: Yash \nLanguage: English \nTimezone: Asia/Kolkata \n\nI'll store this information for our future interactions. \n\nAs we discussed earlier, we will have daily check-ins to help you stay on track with your goals. \n\nLet's move forward. What are your top goals that you'd like to achieve? \n\nWe can start with that, and I can help you create reminders and notes to support you."
+    },
+    {
+      "role": "user",
+      "content": "Sure, remind me about my dentist's appointment tomorrow and also about needing to pay my tiffin provider at 2pm every Friday?"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool-call",
+          "toolCallId": "hhcbyvhed",
+          "toolName": "createReminder",
+          "input": {
+            "title": "Dentist's appointment",
+            "datetime": "2025-09-19T00:00:00.000Z",
+            "timezone": "Asia/Kolkata"
+          }
+        },
+        {
+          "type": "tool-call",
+          "toolCallId": "va9p40tf1",
+          "toolName": "createReminder",
+          "input": {
+            "title": "Pay tiffin provider",
+            "datetime": "2025-09-19T14:00:00.000Z",
+            "rrule": "FREQ=WEEKLY;BYDAY=5;BYHOUR=14;BYMINUTE=0",
+            "timezone": "Asia/Kolkata"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": [
+        {
+          "type": "tool-result",
+          "toolCallId": "hhcbyvhed",
+          "toolName": "createReminder",
+          "output": {
+            "type": "text",
+            "value": "reminderId123"
+          }
+        },
+        {
+          "type": "tool-result",
+          "toolCallId": "va9p40tf1",
+          "toolName": "createReminder",
+          "output": {
+            "type": "text",
+            "value": "reminderId123"
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "I've created reminders for you. \n\nThe first reminder is for your dentist's appointment tomorrow. \n\nThe second reminder is for paying your tiffin provider every Friday at 2 pm. \n\nThese reminders will help you stay on track with your commitments. \n\nLet's review your goals and see if there's anything else we can work on together. \n\nWhat are your thoughts on having a daily check-in to review your progress and plan for the next day?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "Can you update my timezone? I've moved to San Francisco now."
+    }
+  ]
 }

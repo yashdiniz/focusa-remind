@@ -1,0 +1,92 @@
+meta {
+  name: Testing tools
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/api/testchat
+  body: json
+  auth: inherit
+}
+
+body:json {
+  [
+    {
+      "role": "user",
+      "content": "Hi"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! I'm FOCUSA, your AI accountability buddy. I'm excited to work with you to help you achieve your goals. To get started, I need to know a bit more about you. Can you please tell me your preferred name? What do you like to be called?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "My name is Yash"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hi Yash! It's great to meet you. To better understand your needs and work with you effectively, I need to know your timezone and preferred language. Can you please tell me your timezone (e.g. UTC, EST, PST, etc.) and what language you prefer to communicate in (e.g. English, Spanish, French, etc.)? \n\nI will then use this information to update your user profile."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "I'm from Burgundy, and I prefer Japanese."
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Konnichiwa Yash! \n\nBurgundy is a beautiful region in France. I've noted that your preferred language is Japanese, and I'll do my best to communicate with you in (ja). \n\nIf I'm correct, your timezone is Europe/Paris. Is that correct?\n\nAlso, I will update your user profile with your preferred name, language, and timezone.\n\n "
+        },
+        {
+          "type": "tool-call",
+          "toolCallId": "m9hj3nczj",
+          "toolName": "updateUserInfo",
+          "input": {
+            "name": "Yash",
+            "language": "Japanese",
+            "timezone": "Europe/Paris"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": [
+        {
+          "type": "tool-result",
+          "toolCallId": "m9hj3nczj",
+          "toolName": "updateUserInfo",
+          "output": {
+            "type": "json",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hi Yash, I've updated your profile. As FOCUSA, I'll check in with you daily to help you stay on track with your goals. What are your goals, and what do you want to achieve?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "what can you do?"
+    }
+  ]
+}

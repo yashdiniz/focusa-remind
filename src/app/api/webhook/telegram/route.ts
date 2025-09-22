@@ -7,7 +7,7 @@ import { Bot, webhookCallback } from 'grammy';
 import { waitUntil } from '@vercel/functions';
 import { replyFromHistory, MAX_OUTPUT_TOKENS } from '@/packages/ai';
 import { delay } from '@ai-sdk/provider-utils';
-import { generateSystemPrompt } from '@/packages/prompts';
+import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -21,17 +21,23 @@ bot.on('message:text', async (ctx) => {
     console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text);
 
     try {
-        // TODO: Get message history from a database
-        const result = await replyFromHistory([
-            {
-                role: 'system',
-                content: generateSystemPrompt(""),
-            },
-            {
-                role: 'user',
-                content: ctx.message.text,
-            }
-        ], ctx.chatId.toString());
+        // get user session, create if not exists
+        const user = await getUserFromIdentifier('telegram', ctx.chatId.toString(), true);
+        if (!user) {
+            console.log('User not found for chatId', ctx.chatId);
+            return;
+        }
+
+        const msgs = await getLatestMessagesForUser(user);
+        console.log(`${user.platform}-${user.identifier}`, 'Loaded', msgs.length, 'messages from history for user');
+
+        const result = await replyFromHistory([...msgs, { role: 'user', content: ctx.message.text }], user);
+
+        // Save user message and assistant response in a transaction
+        await saveMessagesForUser(user, [
+            { role: 'user', content: ctx.message.text },
+            ...result.response.messages, // Don't save system messages
+        ])
 
         waitUntil((async () => {
             if (result.usage.outputTokens) {
