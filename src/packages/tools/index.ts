@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { tool, type ToolSet } from "ai";
-import type { User } from "@/server/db/schema";
+import { users, type User } from "@/server/db/schema";
+import { db } from "@/server/db";
+import { eq } from "drizzle-orm";
 
 const updateUserInfo = (user: User) => tool({
     name: "updateUserInfo",
@@ -33,8 +35,15 @@ const updateUserInfo = (user: User) => tool({
                 error: "Please use a valid tz database format like 'America/New_York' or 'Asia/Kolkata'."
             }),
     }),
-    execute(input) {
+    async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "userInfo tool called with input:", input);
+        await db.update(users).set({
+            metadata: {
+                ...input,
+                summary: 'Empty summary.',
+            }
+        }).where(eq(users.id, user.id)).execute();
+        console.log(`${user.platform}-${user.identifier}`, "userInfo updated:", user);
     }
 });
 
