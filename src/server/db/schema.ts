@@ -1,4 +1,4 @@
-import type { ModelMessage } from "ai";
+import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
 import { relations, sql } from "drizzle-orm";
 import { index, pgTableCreator, primaryKey, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { uuidv7 } from "uuidv7";
@@ -50,7 +50,7 @@ export const messages = createTable("message", (d) => ({
   userId: d.uuid("user_id").notNull().references(() => users.id),
   sentAt: timestamp("sent_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
   role: d.text({ enum: ['user', 'assistant', 'tool'] }).notNull(),
-  content: d.jsonb().$type<ModelMessage>().notNull(),
+  content: d.jsonb().$type<UserModelMessage | AssistantModelMessage | ToolModelMessage>().notNull(),
 }), t => [
   primaryKey({ columns: [t.userId, t.sentAt] }),
   index("message_user_id_role_idx").on(t.userId, t.role),

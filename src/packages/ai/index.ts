@@ -1,7 +1,7 @@
 import { groq } from '@ai-sdk/groq';
-import { generateText, stepCountIs, type GenerateTextResult, type ModelMessage } from 'ai';
-import { tools } from '@/packages/tools';
-import { generateSystemPrompt } from '@/packages/prompts';
+import { generateText, stepCountIs, type AssistantModelMessage, type GenerateTextResult, type ToolModelMessage, type ToolSet, type UserModelMessage } from 'ai';
+import { agent, generateSystemPrompt } from '@/packages/agent';
+import type { User } from '@/server/db/schema';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -26,34 +26,29 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
             },
         },
         stopWhen: stepCountIs(3), // Stop after 3 steps (tool call + tool response + final text)
-        system: system ?? generateSystemPrompt(""),
+        system: system ?? generateSystemPrompt(),
         prompt,
     });
     console.log('AI response:', text);
     return text;
 }
 
-type TOOLS = typeof tools;
 /**
  * Generates a response from the provided messages.
  * @param messages Message input from the user.
- * @param chatId Optional chat ID for user identification.
+ * @param user User object for context.
  * @returns Response text from the AI model.
  */
-export async function replyFromHistory(messages: ModelMessage[], chatId?: string): Promise<GenerateTextResult<TOOLS, string>> {
-    // TODO: add reAct tool calling
-    const result = await generateText({
-        model, maxOutputTokens: MAX_OUTPUT_TOKENS,
+export async function replyFromHistory(messages: (UserModelMessage | AssistantModelMessage | ToolModelMessage)[], user: User): Promise<GenerateTextResult<ToolSet, string>> {
+    const result = await agent(user).generate({
         providerOptions: {
             groq: {
-                user: chatId ?? 'noChatIdProvided', // Unique identifier for the user (optional)
+                user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
             },
         },
-        stopWhen: stepCountIs(3), // Stop after 3 steps (tool call + tool response + final text)
-        tools,
         messages,
     });
     console.log(result.usage, 'AI response:', result.text);
-    console.log('AI content:', JSON.stringify(result.content));
+    console.log('AI content:', JSON.stringify(result.response.messages));
     return result;
 }
