@@ -56,14 +56,15 @@ export async function getLatestMessagesForUser(user: User, tokenCount = 4096) {
     // This query calculates a running total of tokenCount,
     // returning messages until the cumulative token count exceeds the limit.
     const res = await db.execute(sql`
-        SELECT ${Messages.id} FROM (
+        SELECT t.id FROM (
             SELECT ${Messages.id},
                     SUM(${Messages.tokenCount}) OVER (ORDER BY ${Messages.sentAt} DESC) AS cumulative_token_count
             FROM ${Messages}
-            WHERE ${Messages.userId} = ${user.id} AND cumulative_token_count <= ${tokenCount}
+            WHERE ${Messages.userId} = ${user.id}
             ORDER BY ${Messages.sentAt} DESC
+            limit 100
         ) t
-        WHERE cumulative_token_count <= ${tokenCount}
+        WHERE t.cumulative_token_count <= ${tokenCount}
     `).execute();
     const ids = res.map(r => r.id as string);
     const messages = await db.query.messages.findMany({
