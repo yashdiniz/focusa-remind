@@ -7,6 +7,7 @@ import { Bot, webhookCallback } from 'grammy';
 import { waitUntil } from '@vercel/functions';
 import { replyFromHistory, MAX_OUTPUT_TOKENS } from '@/packages/ai';
 import { delay } from '@ai-sdk/provider-utils';
+import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 
 const token = env.TELEGRAM_BOT_TOKEN;
@@ -36,7 +37,9 @@ bot.on('message:text', async (ctx) => {
         // Save user message and assistant response in a transaction
         const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
-            { role: 'user', content: ctx.message.text, tokenCount: result.usage.inputTokens ?? 0 },
+            // assuming inputTokens includes some extra tokens from the prompt, we subtract a fixed amount to estimate user message tokens
+            // TODO: use the correct tokenizer based on the model used for highest accuracy
+            { role: 'user', content: ctx.message.text, tokenCount: encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length },
             ...responses, // Don't save system messages
         ])
 
