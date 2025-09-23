@@ -1,7 +1,7 @@
 import { db } from "@/server/db";
 import { users as Users, messages as Messages, type User } from "@/server/db/schema";
 import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
-import { desc } from "drizzle-orm";
+import { asc, sql } from "drizzle-orm";
 
 /**
  * Fetches a user from the database based on platform and chatId.
@@ -45,23 +45,39 @@ export async function createUser(
     return result[0];
 }
 
-export async function getLatestMessagesForUser(user: User, limit = 20) {
+/**
+ * Get latest messages for a user up to a certain token count.
+ * @param user user session
+ * @param tokenCount token count limit, defaults to 4096
+ * @returns list of recent messages in chronological order
+ */
+export async function getLatestMessagesForUser(user: User, tokenCount = 4096) {
+    // Note: Drizzle ORM does not currently support window functions, so using raw SQL here.
+    // This query calculates a running total of tokenCount,
+    // returning messages until the cumulative token count exceeds the limit.
+    const res = await db.execute(sql`
+        SELECT ${Messages.id},
+                SUM(${Messages.tokenCount}) OVER (ORDER BY ${Messages.sentAt} DESC) AS cumulative_token_count
+        FROM ${Messages}
+        WHERE ${Messages.userId} = ${user.id} AND cumulative_token_count <= ${tokenCount}
+        ORDER BY ${Messages.sentAt} DESC
+    `).execute();
+    const ids = res.map(r => r.id as string);
     const messages = await db.query.messages.findMany({
-        where: (msg, { eq, and, gte }) => and(
-            eq(msg.userId, user.id),
-            gte(msg.sentAt, new Date(Date.now() - 6 * 60 * 60 * 1000)), // last 6 hours
-        ),
-        orderBy: (msg) => [desc(msg.sentAt)],
-        limit,
+        where: (msg, { inArray }) => inArray(msg.id, ids),
+        orderBy: (msg) => [asc(msg.sentAt)],
     }).execute();
-    return messages.map(m => m.content).reverse(); // Return in chronological order
+    return messages.map(m => m.content);
 }
 
-export async function saveMessagesForUser(user: User, messages: (UserModelMessage | AssistantModelMessage | ToolModelMessage)[]) {
+export async function saveMessagesForUser(user: User,
+    messages: ((UserModelMessage | AssistantModelMessage | ToolModelMessage) & { tokenCount: number })[]
+) {
     const values = messages.map(msg => ({
         userId: user.id,
         role: msg.role,
         content: msg,
+        tokenCount: msg.tokenCount,
     }));
     return await db.insert(Messages).values(values).returning().execute();
 }

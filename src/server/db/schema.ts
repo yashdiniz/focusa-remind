@@ -48,9 +48,10 @@ export type User = typeof users.$inferSelect;
 
 export const messages = createTable("message", (d) => ({
   ...idMixin,
-  userId: d.uuid("user_id").notNull().references(() => users.id),
+  userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   sentAt: timestamp("sent_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
   role: d.text({ enum: ['user', 'assistant', 'tool'] }).notNull(),
+  tokenCount: d.integer().notNull().default(0), // number of tokens in the message
   content: d.jsonb().$type<UserModelMessage | AssistantModelMessage | ToolModelMessage>().notNull(),
 }), t => [
   index("message_user_sentat_idx").on(t.userId, t.sentAt),
