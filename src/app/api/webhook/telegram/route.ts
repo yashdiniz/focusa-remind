@@ -34,7 +34,7 @@ bot.on('message:text', async (ctx) => {
         const result = await replyFromHistory([...msgs, { role: 'user', content: ctx.message.text }], user);
 
         // Save user message and assistant response in a transaction
-        const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: (i < result.response.messages.length - 1 ? 0 : result.usage.outputTokens) ?? 512 }))
+        const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
             { role: 'user', content: ctx.message.text, tokenCount: result.usage.inputTokens ?? 0 },
             ...responses, // Don't save system messages
