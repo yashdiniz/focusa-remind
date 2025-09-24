@@ -4,6 +4,33 @@ import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "
 import { asc, sql } from "drizzle-orm";
 
 /**
+ * Checks if a given timezone string is valid according to the Intl.DateTimeFormat API.
+ * @param tz timezone string to validate
+ * @returns boolean indicating if the timezone is valid
+ */
+export function validateTimezone(tz: string) {
+    // Check if Intl API and timeZone option are supported in the environment
+    if (!Intl?.DateTimeFormat().resolvedOptions().timeZone) {
+        console.warn('Intl.DateTimeFormat with timeZone option is not fully supported in this environment.');
+        // You might choose to throw an error or return false here depending on your needs
+        return false;
+    }
+
+    try {
+        // Attempt to create a DateTimeFormat object with the given timezone
+        // If the timezone is invalid, it will throw a RangeError
+        new Intl.DateTimeFormat(undefined, { timeZone: tz });
+        return true; // If no error, the timezone is considered valid
+    } catch (e) {
+        if (e instanceof RangeError) {
+            console.error('Invalid timezone provided:', tz);
+        }
+        // Catch the RangeError if the timezone is invalid
+        return false;
+    }
+}
+
+/**
  * Fetches a user from the database based on platform and chatId.
  * @param platform currently only 'telegram' is supported
  * @param chatId chatId from the platform

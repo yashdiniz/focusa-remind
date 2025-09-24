@@ -1,3 +1,4 @@
+import type { User } from "@/server/db/schema";
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 
@@ -43,25 +44,30 @@ export const FIRST_INTERACTION_PROMPT = `
 `;
 
 /**
- * Generates a summary prompt based on reminders and notes.
+ * Generates a summary prompt based on reminders and previous summary.
+ * @param user User object which contains summary.
+ * @param summary Previous summary of the user.
  * @param reminders Recently added reminders by the user.
- * @param notes Recently added notes by the system or user.
  * @returns summary prompt string.
  */
-export async function generateSummaryPrompt(data: { summary: string; }, reminders: string[], notes: string[]) {
+export async function generateSummaryPrompt(user: User, summary: string/*, reminders: Reminder[]*/) {
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
-  const prompt = `Produce a short, low-token summary of the user goals, priorities, and notes. Keep the summary concise but meaningful. Preserve essential context; cut filler.
+  // TODO: bring reminders back!!
+  // User's active Reminders:
+  // - ${reminders.join('\n- ')}
+  const prompt = `Merge user's previous summary, reminders and new summary. Keep it concise and meaningful. Preserve essential context; no filler and extra prose.
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.
 Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
-Highlight recurring patterns/themes tied to accountability and goal progress.
 ---
+
 User's active Reminders:
-- ${reminders.join('\n- ')}
+- No reminders.
 
-User's Notes:
-- ${notes.join('\n- ')}
+User's previous summary:
+${user.metadata?.summary ?? 'Empty summary'}
 
-User's previous summary: ${data.summary}`;
+New summary:
+${summary}`;
 
   return await generateText({
     model: groq("gemma2-9b-it"), maxOutputTokens: 250,
