@@ -48,10 +48,10 @@ export async function createUser(
 /**
  * Get latest messages for a user up to a certain token count.
  * @param user user session
- * @param tokenCount token count limit, defaults to 4096
+ * @param tokenCount token count limit, defaults to 700
  * @returns list of recent messages in chronological order
  */
-export async function getLatestMessagesForUser(user: User, tokenCount = 4096) {
+export async function getLatestMessagesForUser(user: User, tokenCount = 700) {
     // Note: Drizzle ORM does not currently support window functions, so using raw SQL here.
     // This query calculates a running total of tokenCount,
     // returning messages until the cumulative token count exceeds the limit.
@@ -62,7 +62,7 @@ export async function getLatestMessagesForUser(user: User, tokenCount = 4096) {
             FROM ${Messages}
             WHERE ${Messages.userId} = ${user.id}
             ORDER BY ${Messages.sentAt} DESC
-            limit 100
+            limit 50
         ) t
         WHERE t.cumulative_token_count <= ${tokenCount}
     `).execute();
