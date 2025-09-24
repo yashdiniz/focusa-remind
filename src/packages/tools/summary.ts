@@ -23,7 +23,7 @@ const create = (user: User) => tool({
             }).where(eq(users.id, user.id)).execute();
             console.log(`${user.platform}-${user.identifier}`, "summary.update occured", summary);
         } else return {
-            error: "onboarding is not done yet. Cannot update summary without onboarding. Please proceed with onboarding"
+            error: "Cannot update summary without onboarding"
         }
     },
 });

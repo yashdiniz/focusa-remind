@@ -23,11 +23,8 @@ const budgetExceeded: StopCondition<ToolSet> = ({ steps }) => {
 
 export function agent(user: User): Agent<ToolSet, string> {
     const system = user.metadata ? generateSystemPrompt([
-        user.metadata.summary,
-        `The time right now is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: true, hour: 'numeric', minute: 'numeric', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.
-The user prefers to communicate in ${user.metadata.language ?? 'English'}.
-The user's name is ${user.metadata.name ?? 'Unknown'}.
-The user's current local time zone is ${user.metadata.timezone ?? 'UTC'}.`,
+        `<user><name>${user.metadata.name ?? 'Unknown'}</name><language>${user.metadata.language ?? 'English'}</language><timezone>${user.metadata.timezone ?? 'UTC'}</timezone><summary>${user.metadata.summary}</summary></user>`,
+        `<currentTime>${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: true, hour: 'numeric', minute: 'numeric', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</currentTime>`,
     ]) : generateSystemPrompt([FIRST_INTERACTION_PROMPT]);
     const agent = new Agent({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
