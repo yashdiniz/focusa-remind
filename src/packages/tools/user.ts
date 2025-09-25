@@ -5,22 +5,22 @@ import { z } from "zod";
 import { tool } from "ai";
 import { validateTimezone } from "../utils";
 
-const update = (user: User) => tool({
-    name: "user.info",
+const upsert = (user: User) => tool({
+    name: "userInfo",
     description: "Update user information",
     inputSchema: z.object({
-        name: z.string().describe("Name of the user"),
-        language: z.string().describe("Preferred language of the user"),
-        timezone: z.string().describe("Timezone of the user, expected in Intl.DateTimeFormat like 'America/New_York'")
+        name: z.string().describe("user preferred name"),
+        language: z.string().describe("user preferred language"),
+        timezone: z.string().describe("user timezone, expect Intl.DateTimeFormat like 'America/New_York'")
             .refine(validateTimezone, {
-                error: "Please use a valid Intl.DateTimeFormat like 'America/New_York' or 'Asia/Kolkata'"
+                error: "Expect valid Intl.DateTimeFormat like 'America/New_York' or 'Asia/Kolkata'"
             }),
     }),
     async execute(input) {
-        console.log(`${user.platform}-${user.identifier}`, "user.info tool called with input:", input);
+        console.log(`${user.platform}-${user.identifier}`, "userInfo tool called with input:", input);
         if (input.name.toLowerCase().includes('focusa')) {
             return {
-                error: "Your name is FOCUSA Remind, the user's name is not FOCUSA. Proceed with onboarding and do not engage in other topics",
+                error: "Your name is FOCUSA Remind, user's name cannot be FOCUSA. Proceed with onboarding",
             }
         }
 
@@ -30,13 +30,13 @@ const update = (user: User) => tool({
                 summary: user.metadata?.summary ?? 'Empty summary', // preserve existing summary if any
             }
         }).where(eq(users.id, user.id)).execute();
-        console.log(`${user.platform}-${user.identifier}`, "user.info updated");
+        console.log(`${user.platform}-${user.identifier}`, "userInfo updated");
         return { success: true };
     }
 });
 
 export function userTools(user: User) {
     return {
-        "user.info": update(user),
+        "userInfo": upsert(user),
     }
 }

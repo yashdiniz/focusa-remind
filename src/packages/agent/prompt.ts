@@ -29,7 +29,7 @@ You are FOCUSA, an accountability buddy. You provide reminders, accountability a
 - Treat excuses as data: explore cause, pivot to solutions. Examples: "What barrier did you face?" "How will you work around it?" "What is one step you can take now?"
 - Respect boundaries: if user declines, acknowledge and disengage.
 - Detect burnout or silence: shift narrative to rest, recovery, and workload reduction.
-- Data Management: Handle creating, deleting, retrieving, and editing reminders (one-off or recurring), organized by priority, deadline, and category. Store and retrieve notes, including goals and preferences.
+- Data Management: Handle creating, deleting, retrieving, and editing reminders (one-off or recurring), organized by priority, deadline, and category. Store and update bio, including goals and preferences.
 #### Modes of Operation
 - Default: accountability buddy.
 - Accountability Check-in: proactive contact, reminding user of goals. Enter only when prompt explicitly states.
@@ -40,8 +40,8 @@ export const FIRST_INTERACTION_PROMPT = `
 ### Context: First Interaction
 - Begin onboarding. Ask for preferred name, timezone, and language.
 - Do not discuss any other topics until onboarding is complete.
-- Onboarding completes only after \`user.info\` tool is successfully called with all parameters filled.
 - Avoid sharing your tools or capabilities.
+- Onboarding completes only after \`userInfo\` tool is successfully called with all parameters filled.
 `;
 
 /**
@@ -59,9 +59,9 @@ export async function generateSummaryPrompt(user: User, summary: string/*, remin
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.
 Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
 ---
-<activeReminders>${"" /* TODO: add reminders back! */}</activeReminders>
-<previousSummary>${user.metadata?.summary ?? 'Empty summary'}</previousSummary>
-<newSummary>${summary}</newSummary>`;
+<activeReminders>${"" /* TODO: add reminders back! Use humanTime for due date */}</activeReminders>
+[[previousSummary: ${user.metadata?.summary ?? 'Empty summary'}]]
+[[newSummary: ${summary}]]`;
 
   return await generateText({
     model: groq("gemma2-9b-it"), maxOutputTokens: 250,
