@@ -28,13 +28,12 @@ interface UserMetadata {
   summary: string; // summary of user's goals and priorities
 }
 
-export const users = createTable("user", (d) => ({
+export const users = createTable("user", d => ({
   ...idMixin,
   platform: d.text({ enum: ['telegram'] }).notNull(),
   identifier: d.varchar({ length: 255 }).notNull(),
   metadata: d.jsonb().$type<UserMetadata>(),
-  ...createdAtMixin,
-  ...updatedAtMixin,
+  ...createdAtMixin, ...updatedAtMixin,
 }), t => ([
   uniqueIndex("user_platform_identifier_idx").on(t.platform, t.identifier),
 ]));
@@ -46,7 +45,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 export type User = typeof users.$inferSelect;
 
-export const messages = createTable("message", (d) => ({
+export const messages = createTable("message", d => ({
   ...idMixin,
   userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   sentAt: timestamp("sent_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),

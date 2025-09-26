@@ -7,7 +7,7 @@ import { generateSummaryPrompt } from "../agent";
 
 const upsert = (user: User) => tool({
     name: "bio",
-    description: "Call when user instructs (“remember,” “store,” “forget,” “delete”) or when you find long-term relevant info; include occupation, hobbies, recurring goals, priorities, deadlines, stable long-term facts (“prefers concise answers,” “codes daily,” “data engineer”), accountability context; exclude trivia, fleeting context (e.g., “ate pizza,” “tired today”), sensitive categories, one-off tasks/reminders; keep existing points unless contradicted or explicitly flagged for removal; confirm with user if relevance uncertain",
+    description: "Trigger when asked (“remember/store/forget/delete”) or on enduring info; include occupation, hobbies, recurring goals, priorities, deadlines, stable facts (“prefers concise answers,” “codes daily,” “data engineer”), accountability context; exclude trivia, fleeting states (“ate pizza,” “tired”), sensitive data, one-offs. Keep existing points unless contradicted/flagged; confirm when uncertain",
     inputSchema: z.object({
         summary: z.string().describe("New concise summary"),
     }),
