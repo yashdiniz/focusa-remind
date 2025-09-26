@@ -2,6 +2,7 @@ import { db } from "@/server/db";
 import { users as Users, messages as Messages, type User } from "@/server/db/schema";
 import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
 import { asc, sql } from "drizzle-orm";
+import { RRule, rrulestr } from "rrule";
 
 /**
  * Checks if a given timezone string is valid according to the Intl.DateTimeFormat API.
@@ -22,10 +23,24 @@ export function validateTimezone(tz: string) {
         new Intl.DateTimeFormat(undefined, { timeZone: tz });
         return true; // If no error, the timezone is considered valid
     } catch (e) {
-        if (e instanceof RangeError) {
-            console.error('Invalid timezone provided:', tz);
-        }
-        // Catch the RangeError if the timezone is invalid
+        if (e instanceof Error) console.error('Invalid timezone provided:', tz, e.message);
+        return false;
+    }
+}
+
+/**
+ * Checks if a given RFC5545 RRULE string is valid using rrule.js
+ * Expect tzid and dtstart to always be set.
+ * @param rrule rrule string to validate
+ * @returns boolean indicating if the rrule is valid
+ */
+export function validateRRule(rrule: string | undefined) {
+    if (!rrule) return true
+    try {
+        const r = rrulestr(rrule)
+        return r instanceof RRule && r.origOptions.tzid && r.origOptions.dtstart
+    } catch (e) {
+        if (e instanceof Error) console.error('Invalid rrule', rrule, e.message);
         return false;
     }
 }
