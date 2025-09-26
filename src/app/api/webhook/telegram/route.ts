@@ -9,9 +9,6 @@ import { replyFromHistory, MAX_OUTPUT_TOKENS } from '@/packages/ai';
 import { delay } from '@ai-sdk/provider-utils';
 import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
-import { db } from '@/server/db';
-import { users } from '@/server/db/schema';
-import { eq } from 'drizzle-orm';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) {

@@ -40,6 +40,7 @@ export const users = createTable("user", d => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   messages: many(messages),
+  reminders: many(reminders),
   //accounts: many(accounts),
 }));
 
@@ -59,6 +60,22 @@ export const messages = createTable("message", d => ({
 export const messagesRelations = relations(messages, ({ one }) => ({
   user: one(users, { fields: [messages.userId], references: [users.id] }),
 }));
+
+export const reminders = createTable("reminder", d => ({
+  ...idMixin,
+  userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  completed: d.boolean("completed").notNull().default(false),
+  title: d.text("title").notNull(),
+  dueAt: timestamp("due_date", { withTimezone: true }),
+  rrule: d.text("rrule"),
+  priority: d.text("priority", { enum: ['A', 'B', 'C'] }),
+  description: d.text("description"),
+  ...createdAtMixin, ...updatedAtMixin,
+}))
+
+export const reminderRelations = relations(reminders, ({ one }) => ({
+  user: one(users, { fields: [reminders.userId], references: [users.id] }),
+}))
 
 
 // import { type AdapterAccount } from "next-auth/adapters";
