@@ -9,6 +9,9 @@ import { replyFromHistory, MAX_OUTPUT_TOKENS } from '@/packages/ai';
 import { delay } from '@ai-sdk/provider-utils';
 import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
+import { db } from '@/server/db';
+import { users } from '@/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -32,13 +35,30 @@ bot.on('message:text', async (ctx) => {
         const msgs = await getLatestMessagesForUser(user);
         console.log(`${user.platform}-${user.identifier}`, 'Loaded', msgs.length, 'messages from history for user');
 
-        const result = await replyFromHistory([...msgs, { role: 'user', content: ctx.message.text }], user);
+        if (!user.metadata) {
+            msgs.push(
+                // assist user onboarding with telegram info
+                { role: 'user', content: `From telegram: ${JSON.stringify(ctx.from)}` },
+                { role: 'user', content: ctx.message.text }
+            )
+        } else if (!(user.metadata.info as { telegram: typeof ctx.from })?.telegram) {
+            await db.update(users).set({
+                metadata: {
+                    ...user.metadata,
+                    info: {
+                        ...(user.metadata.info as object),
+                        telegram: ctx.from
+                    },
+                }
+            }).where(eq(users.id, user.id)).execute()
+        }
+
+        const result = await replyFromHistory(msgs, user);
 
         // Save user message and assistant response in a transaction
         const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
-            // assuming inputTokens includes some extra tokens from the prompt, we subtract a fixed amount to estimate user message tokens
-            // TODO: use the correct tokenizer based on the model used for highest accuracy
+            // TODO: use the correct tokenizer based on the model used to get the correct token count
             { role: 'user', content: ctx.message.text, tokenCount: encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length },
             ...responses, // Don't save system messages
         ])
