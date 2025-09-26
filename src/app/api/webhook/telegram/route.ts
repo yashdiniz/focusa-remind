@@ -36,22 +36,10 @@ bot.on('message:text', async (ctx) => {
         console.log(`${user.platform}-${user.identifier}`, 'Loaded', msgs.length, 'messages from history for user');
 
         if (!user.metadata) {
-            msgs.push(
-                // assist user onboarding with telegram info
-                { role: 'user', content: `From telegram: ${JSON.stringify(ctx.from)}` },
-                { role: 'user', content: ctx.message.text }
-            )
-        } else if (!(user.metadata.info as { telegram: typeof ctx.from })?.telegram) {
-            await db.update(users).set({
-                metadata: {
-                    ...user.metadata,
-                    info: {
-                        ...(user.metadata.info as object),
-                        telegram: ctx.from
-                    },
-                }
-            }).where(eq(users.id, user.id)).execute()
+            // assist user onboarding with telegram info
+            msgs.push({ role: 'user', content: `Data from telegram to assist onboarding: ${JSON.stringify(ctx.from)}. Do not assume timezone, please ask.` })
         }
+        msgs.push({ role: 'user', content: ctx.message.text })
 
         const result = await replyFromHistory(msgs, user);
 
@@ -67,8 +55,7 @@ bot.on('message:text', async (ctx) => {
             if (result.usage.outputTokens) {
                 await delay(10000 * result.usage.outputTokens / MAX_OUTPUT_TOKENS); // Simulate typing delay based on output tokens
             }
-            await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(),
-                ctx.message.message_id, interval) // Echo the received message
+            await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(), ctx.message.message_id, interval) // Echo the received message
         })());
     } catch (e) {
         console.error('Error processing message:', e);

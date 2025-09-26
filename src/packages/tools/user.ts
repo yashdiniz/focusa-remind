@@ -50,7 +50,8 @@ const upsert = (user: User) => tool({
 
         await db.update(users).set({
             metadata: {
-                ...input,
+                ...user.metadata,
+                ...input, // overwrite inputs
                 summary: user.metadata?.summary ?? 'Empty summary', // preserve existing summary if any
             }
         }).where(eq(users.id, user.id)).execute();
