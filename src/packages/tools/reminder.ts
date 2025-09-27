@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { tool } from "ai";
 import { type User } from "@/server/db/schema";
-import { validateRRule } from "../utils";
+import { humanTime, validateRRule } from "../utils";
 import { RRule } from "rrule";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
@@ -12,7 +12,7 @@ dayjs.extend(timezone)
 const create = (user: User) => {
     return tool({
         name: "reminder.create",
-        description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. Check output of `repeats` for system validation and retry accordingly",
+        description: "Create reminder. Always provide local time. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. Check output of `repeats` and retry accordingly",
         inputSchema: z.object({
             title: z.string().describe("Reminder title"),
             type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder"),
@@ -22,8 +22,8 @@ const create = (user: User) => {
                 .superRefine((z, ctx) => {
                     if (z)
                         try {
-                            const d = new Date(z)
-                            if (d.getTime() - Date.now() < 0) ctx.addIssue("must be future date")
+                            const d = dayjs(z).tz('UTC')
+                            if (d.toDate().getTime() - Date.now() < 0) ctx.addIssue("must be future date")
                         } catch (e) {
                             if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                         }
@@ -45,7 +45,7 @@ const create = (user: User) => {
         outputSchema: z.object({
             id: z.uuidv7().describe("System reminder ID"),
             setAt: z.date().describe("reminder set date"),
-            repeats: z.string().describe("recurrence pattern. Use this to check if system setting matches user request").optional(),
+            repeats: z.string().describe("recurrence pattern. Use this to check if system behavior matches user request"),
         }),
         execute(input) {
             const res = {
@@ -64,10 +64,11 @@ const create = (user: User) => {
                 }
             }
             if (input.dueDate) {
-                const setAt = dayjs.tz(input.dueDate, user.metadata?.timezone).tz('UTC').toDate()
+                const setAt = dayjs(input.dueDate).tz('UTC').toDate()
                 return {
                     ...res,
                     setAt,
+                    repeats: humanTime(setAt),
                 }
             }
         },
