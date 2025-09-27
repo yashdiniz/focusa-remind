@@ -7,31 +7,29 @@ import type { User } from "@/server/db/schema";
 const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
 
-const budgetExceeded: StopCondition<ToolSet> = ({ steps }) => {
+const budgetExceeded: (budget?: number) => StopCondition<ToolSet> = (budget = 2000) => ({ steps }) => {
     const totalUsage = steps.reduce(
         (acc, step) => ({
-            inputTokens: acc.inputTokens + (step.usage?.inputTokens ?? 0),
-            outputTokens: acc.outputTokens + (step.usage?.outputTokens ?? 0),
+            tokens: acc.tokens + (step.usage?.totalTokens ?? 0),
         }),
-        { inputTokens: 0, outputTokens: 0 },
+        { tokens: 0 },
     );
 
-    const costEstimate =
-        (totalUsage.inputTokens * 0.01 + totalUsage.outputTokens * 0.03) / 1000;
-    return costEstimate > 0.5; // Stop if cost exceeds $0.5
+    const costEstimate = totalUsage.tokens;
+    return costEstimate > budget; // Stop if total tokens exceeded
 };
 
 export function agent(user: User): Agent<ToolSet, string> {
     const system = user.metadata ? generateSystemPrompt([
         `[[username: ${user.metadata.name ?? 'unknown'}]] [[language: ${user.metadata.language ?? 'English'}]] [[timezone: ${user.metadata.timezone ?? 'UTC'}]] [[summary: ${user.metadata.summary}]]`,
-        `[[currTime: ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: true, hour: 'numeric', minute: 'numeric', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}]]`,
+        `Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' })} now at user's timezone. UTC timestamp ${new Date().toISOString()}`,
     ]) : generateSystemPrompt([FIRST_INTERACTION_PROMPT]);
     const agent = new Agent({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
         system,
         stopWhen: [
             stepCountIs(5), // Stop after 5 steps
-            budgetExceeded,
+            budgetExceeded(4000),
         ],
         tools: tools(user),
     })
