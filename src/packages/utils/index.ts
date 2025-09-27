@@ -2,7 +2,8 @@ import { db } from "@/server/db";
 import { users as Users, messages as Messages, type User } from "@/server/db/schema";
 import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
 import { asc, sql } from "drizzle-orm";
-import { RRule, rrulestr } from "rrule";
+import { RRule } from "rrule";
+import type z from "zod";
 
 /**
  * Checks if a given timezone string is valid according to the Intl.DateTimeFormat API.
@@ -34,14 +35,19 @@ export function validateTimezone(tz: string) {
  * @param rrule rrule string to validate
  * @returns boolean indicating if the rrule is valid
  */
-export function validateRRule(rrule: string | undefined) {
-    if (!rrule) return true
-    try {
-        const r = rrulestr(rrule)
-        return r instanceof RRule && r.origOptions.tzid && r.origOptions.dtstart
-    } catch (e) {
-        if (e instanceof Error) console.error('Invalid rrule', rrule, e.message);
-        return false;
+export function validateRRule(rrule: string | undefined, ctx: z.core.$RefinementCtx<string | undefined>): void {
+    if (rrule) {
+        try {
+            const r = RRule.fromString(rrule)
+            if (!(r.origOptions.tzid && r.origOptions.dtstart)) {
+                ctx.addIssue("missing or incorrect DTSTART;TZID, example: DTSTART;TZID=Australia/Perth:20251001T085900")
+            }
+        } catch (e) {
+            if (e instanceof Error) {
+                console.error('Invalid rrule', rrule, e.message);
+                ctx.addIssue(`Invalid rrule ${e.message}`)
+            }
+        }
     }
 }
 
@@ -126,10 +132,10 @@ export async function createUser(
 /**
  * Get latest messages for a user up to a certain token count.
  * @param user user session
- * @param tokenCount token count limit, defaults to 700
+ * @param tokenCount token count limit, defaults to 250
  * @returns list of recent messages in chronological order
  */
-export async function getLatestMessagesForUser(user: User, tokenCount = 700) {
+export async function getLatestMessagesForUser(user: User, tokenCount = 250) {
     // Note: Drizzle ORM does not currently support window functions, so using raw SQL here.
     // This query calculates a running total of tokenCount,
     // returning messages until the cumulative token count exceeds the limit.
