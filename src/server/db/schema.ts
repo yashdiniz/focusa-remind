@@ -66,9 +66,8 @@ export const reminders = createTable("reminder", d => ({
   userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   completed: d.boolean("completed").notNull().default(false),
   title: d.text("title").notNull(),
-  dueAt: timestamp("due_date", { withTimezone: true }),
+  dueAt: timestamp("due_at", { withTimezone: true }),
   rrule: d.text("rrule"),
-  priority: d.text("priority", { enum: ['A', 'B', 'C'] }),
   description: d.text("description"),
   ...createdAtMixin, ...updatedAtMixin,
 }))
@@ -77,6 +76,7 @@ export const reminderRelations = relations(reminders, ({ one }) => ({
   user: one(users, { fields: [reminders.userId], references: [users.id] }),
 }))
 
+export type Reminder = typeof reminders.$inferSelect;
 
 // import { type AdapterAccount } from "next-auth/adapters";
 // export const accounts = createTable(

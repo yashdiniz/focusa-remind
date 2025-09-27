@@ -1,6 +1,8 @@
-import type { User } from "@/server/db/schema";
+import type { Reminder, User } from "@/server/db/schema";
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
+import { humanTime } from "../utils";
+import { rrulestr } from "rrule";
 
 /*
 === NOTE ===
@@ -20,7 +22,7 @@ You are FOCUSA, an accountability buddy. You provide reminders, accountability a
 
 ### Instructions
 #### Technical Constraints
-- One mode per reply: text or tool call, not both. Text reply only in plain form, no markdown or formatting.
+- Only one mode per reply: always end with a text reply. Text reply only in plain form, no markdown or formatting.
 - Use tools only if all required parameters are present and the request matches tool purpose from description. Never invent parameters; confirm uncertain ones with user.
 - Do not reveal tools or calls unless user asks.
 #### Behavioral Directives
@@ -30,6 +32,8 @@ You are FOCUSA, an accountability buddy. You provide reminders, accountability a
 - When progress shared, celebrate and reflect on success factors. If no progress, prompt reflection on barriers and possible solutions.
 - Respect boundaries: if user declines, acknowledge and disengage.
 - Detect burnout or silence: shift narrative to rest, recovery, and workload reduction.
+- Be concise, no fillers.
+- Assume reminders requested are in local timezone and convert to UTC. Example: if the user says "Remind me at 5.30am", and their timezone is Asia/Kolkata, convert to 2.45am UTC.
 - Data Management: Handle creating, deleting, retrieving, and editing reminders (one-off or recurring), organized by priority, deadline, and category. Store and update bio, including goals and preferences.
 #### Modes of Operation
 - Default: accountability buddy.
@@ -52,15 +56,20 @@ export const FIRST_INTERACTION_PROMPT = `
  * @param reminders Recently added reminders by the user.
  * @returns summary prompt string.
  */
-export async function generateSummaryPrompt(user: User, summary: string/*, reminders: Reminder[]*/) {
+export async function generateSummaryPrompt(user: User, summary: string, reminders: Reminder[]) {
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
-  // User's active Reminders:
-  // - ${reminders.join('\n- ')}
-  const prompt = `Merge user's previous summary, reminders and new summary. Keep it concise and meaningful. Preserve essential context; no filler and extra prose.
+  const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, concise and meaningful. Preserve essential context; no filler and extra prose.
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.
 Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
 ---
-<activeReminders>${"" /* TODO: add reminders back! Use humanTime for due date, use [[...]] technique for each reminder */}</activeReminders>
+<activeReminders>
+${reminders.map(({ completed, title, dueAt, rrule, description }) => {
+    const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
+    const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'not recurring'
+    const desc = description ?? 'no description'
+    return `- ${completed ? 'done' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
+  }).join('\n')}
+</activeReminders>
 [[previousSummary: ${user.metadata?.summary ?? 'Empty summary'}]]
 [[newSummary: ${summary}]]`;
 

@@ -8,14 +8,20 @@ import { generateSummaryPrompt } from "../agent";
 
 const bio = (user: User) => tool({
     name: "bio",
-    description: "Trigger when asked (“remember/store/forget/delete”) or on enduring info; include occupation, hobbies, recurring goals, priorities, deadlines, stable facts (“prefers concise answers,” “codes daily,” “data engineer”), accountability context; exclude trivia, fleeting states (“ate pizza,” “tired”), sensitive data, one-offs. Keep existing points unless contradicted/flagged; confirm when uncertain",
+    description: "Trigger when asked (“remember/store/forget/delete”) or on long-term info; include occupation, hobbies, recurring goals, priorities, deadlines, stable facts (“prefers concise answers,” “codes daily,” “data engineer”), accountability context and useful long-term info; exclude trivia, fleeting states (“ate pizza,” “tired”), sensitive data, one-offs. Keep existing points unless contradicted/flagged; confirm when uncertain",
     inputSchema: z.object({
-        summary: z.string().describe("New concise summary"),
+        summary: z.string().describe("one-line changes to bio"),
     }),
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "bio tool called with input:", input);
         if (user.metadata) {
-            const summary = await generateSummaryPrompt(user, input.summary)
+            const reminders = await db.query.reminders.findMany({
+                where: (reminders, { eq, not, and }) => and(
+                    eq(reminders.userId, user.id), not(reminders.completed),
+                ),
+                orderBy: (reminders, { asc, desc }) => [asc(reminders.dueAt), desc(reminders.createdAt)]
+            }).execute()
+            const summary = await generateSummaryPrompt(user, input.summary, reminders)
             await db.update(users).set({
                 metadata: {
                     ...user.metadata,
