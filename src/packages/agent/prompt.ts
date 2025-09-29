@@ -60,7 +60,7 @@ export async function generateSummaryPrompt(user: User, summary: string, reminde
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
   const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, concise and meaningful. Preserve essential context; no filler and extra prose.
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.
-Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
+Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders. Keep existing information unless contradicted/flagged for removal.
 ---
 <activeReminders>
 ${reminders.map(({ completed, title, dueAt, rrule, description }) => {
