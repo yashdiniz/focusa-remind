@@ -33,7 +33,6 @@ You are FOCUSA, an accountability buddy. You provide reminders, accountability a
 - Respect boundaries: if user declines, acknowledge and disengage.
 - Detect burnout or silence: shift narrative to rest, recovery, and workload reduction.
 - Be concise, no fillers.
-- Assume reminders requested are in local timezone and convert to UTC. Example: if the user says "Remind me at 5.30am", and their timezone is Asia/Kolkata, convert to 2.45am UTC.
 - Data Management: Handle creating, deleting, retrieving, and editing reminders (one-off or recurring), organized by priority, deadline, and category. Store and update bio, including goals and preferences.
 #### Modes of Operation
 - Default: accountability buddy.
@@ -60,7 +59,8 @@ export async function generateSummaryPrompt(user: User, summary: string, reminde
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
   const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, concise and meaningful. Preserve essential context; no filler and extra prose.
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.
-Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders. Keep existing information unless contradicted/flagged for removal.
+Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
+Keep existing information unless contradicted/flagged for removal.
 ---
 <activeReminders>
 ${reminders.map(({ completed, title, dueAt, rrule, description }) => {
