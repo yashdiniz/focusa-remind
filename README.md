@@ -1,29 +1,87 @@
-# Create T3 App
+# Focusa Remind
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+Focusa Remind is a Telegram bot for creating and managing reminders with recurrence support, hosted on Vercel.
 
-## What's next? How do I make an app with this?
+## Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- Create reminders from Telegram bot (with future plans for web UI)
+- Recurring reminders via [`rrule`](https://github.com/icalendar/rrule), using [rrule.js](https://github.com/jkbrzt/rrule)
+- PostgreSQL with Drizzle ORM & migrations
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Tech Stack
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- Next.js 15 (React 19)
+- Drizzle ORM + PostgreSQL
+- Grammy (Telegram bot)
 
-## Learn More
+## Setup
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+### Prerequisites
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+- Node.js ≥ 18
+- Yarn 1.x
+- PostgreSQL (using NeonDB for free tier)
+- You will need to setup your own cron jobs to make sure the reminders reliably trigger (I use n8n)
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+### Installation
 
-## How do I deploy this?
+```bash
+git clone https://github.com/yashdiniz/focusa-remind
+cd focusa-remind
+yarn install
+cp .env.example .env   # configure env vars
+```
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Setup `.env` file as follows:
+
+- Get `DATABASE_URL` from NeonDB.
+- Get `GROQ_API_KEY` from the [Groq Dashboard](https://console.groq.com/keys)
+- Get `TELEGRAM_BOT_TOKEN` by setting up a Telegram bot via the [Botfather](https://telegram.me/BotFather)
+- Use a random string for `AUTH_SECRET`. This is used as an API key for `/api/testchat` endpoint.
+
+### Database
+
+```bash
+yarn db:generate   # generate migrations
+yarn db:migrate    # apply migrations
+```
+
+### Development
+
+```bash
+yarn dev
+```
+
+### Production
+
+```bash
+yarn build
+yarn start
+```
+
+## Environment Variables
+
+See `.env.example` for all required keys:
+
+- `DATABASE_URL` – Postgres connection string
+- `GROQ_API_KEY` – Groq API key for accessing models
+- `TELEGRAM_BOT_TOKEN` – Bot token from @BotFather
+
+## Usage
+
+### Telegram Bot
+
+1. Start the bot: [@focusaRemind_bot](https://t.me/focusaRemind_bot)
+2. Use natural language commands:
+   - `Remind me to Buy milk at 6pm`
+   - `Remind me to Call mom every Monday & Thursday at 9am`
+3. The bot schedules and delivers reminders via tool calls, generates the necessary `rrule`s at the specified times
+
+## Scripts
+
+- `yarn dev` – start dev server
+- `yarn build` – build app
+- `yarn start` – run prod build
+- `yarn db:generate` – generate migrations
+- `yarn db:migrate` – run migrations
+- `yarn test` – run tests
