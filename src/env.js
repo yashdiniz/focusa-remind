@@ -16,6 +16,7 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     GROQ_API_KEY: z.string(),
     TELEGRAM_BOT_TOKEN: z.string(),
+    SLACK_BOT_TOKEN: z.string(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -41,6 +42,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**
