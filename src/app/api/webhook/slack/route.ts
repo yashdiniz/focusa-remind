@@ -1,10 +1,13 @@
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-// import { env } from '@/env';
-// import { WebClient } from '@slack/web-api';
+import { env } from '@/env';
+import { WebClient } from '@slack/web-api';
 import type { NextRequest } from 'next/server';
 import z from 'zod';
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+const bot = new WebClient(env.SLACK_BOT_TOKEN)
 
 const inputSchema = z.object({
     type: z.enum([
@@ -21,13 +24,6 @@ const inputSchema = z.object({
         channel_type: z.enum(['im']),
     }),
 })
-
-// const token = env.SLACK_BOT_TOKEN;
-// if (!token) {
-//     throw new Error('SLACK_BOT_TOKEN is not set');
-// }
-
-// const bot = new WebClient(token)
 
 export async function POST(req: NextRequest) {
     const body = inputSchema.safeParse(await req.json())
@@ -46,7 +42,10 @@ export async function POST(req: NextRequest) {
         return new Response(body.data.challenge)
     }
     if (body.data.type === 'event_callback') {
-        return new Response(body.data.event.text)
+        await bot.chat.postMessage({
+            channel: body.data.event.channel,
+            markdown_text: 'Echo:\n' + body.data.event.text,
+        })
     }
 
     // otherwise ECHO back
