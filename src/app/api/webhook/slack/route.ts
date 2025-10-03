@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const res = inputSchema.safeParse(await req.json())
     if (!res.success) {
         console.error("Invalid input to /api/webhook/slack:", res.error);
-        return new Response(JSON.stringify(res.error.message), {
+        return new Response(res.error.message, {
             status: 400,
             headers: {
                 'Content-Type': 'application/json',
@@ -31,5 +31,7 @@ export async function POST(req: NextRequest) {
         })
     }
 
-    return new Response(res.data.challenge)
+    if (res.data.type === 'url_verification') {
+        return new Response(res.data.challenge)
+    }
 }

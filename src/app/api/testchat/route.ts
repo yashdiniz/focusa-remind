@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const res = inputSchema.safeParse(await req.json());
     if (!res.success) {
         console.error("Invalid input to /api/testchat:", res.error);
-        return new Response(JSON.stringify(res.error.message), {
+        return new Response(res.error.message, {
             status: 400,
             headers: {
                 'Content-Type': 'application/json',
