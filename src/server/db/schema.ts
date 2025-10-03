@@ -30,7 +30,7 @@ interface UserMetadata {
 
 export const users = createTable("user", d => ({
   ...idMixin,
-  platform: d.text({ enum: ['telegram'] }).notNull(),
+  platform: d.text({ enum: ['telegram', 'slack'] }).notNull(),
   identifier: d.varchar({ length: 255 }).notNull(),
   metadata: d.jsonb().$type<UserMetadata>(),
   ...createdAtMixin, ...updatedAtMixin,

@@ -88,14 +88,14 @@ export function humanTime(seconds: Date | number) {
 }
 
 /**
- * Fetches a user from the database based on platform and chatId.
- * @param platform currently only 'telegram' is supported
+ * Fetches a user from the database based on platform and chatId/channelId.
+ * @param platform currently only 'telegram' & 'slack' is supported
  * @param chatId chatId from the platform
  * @param createIfNotExists if true, creates a new user if one does not exist
  * @returns 
  */
 export async function getUserFromIdentifier(
-    platform: 'telegram',
+    platform: 'telegram' | 'slack',
     chatId: string, createIfNotExists = false
 ) {
     const q = db.query.users.findFirst({
@@ -116,7 +116,7 @@ export async function getUserFromIdentifier(
  * @returns 
  */
 export async function createUser(
-    platform: 'telegram',
+    platform: 'telegram' | 'slack',
     chatId: string
 ) {
     const result = await db.insert(Users).values({

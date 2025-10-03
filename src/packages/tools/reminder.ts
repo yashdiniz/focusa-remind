@@ -77,6 +77,8 @@ const create = (user: User) => {
 
 export function reminderTools(user: User) {
     return {
-        "reminder.create": create(user),
+        ...(user.metadata ? {
+            "reminder.create": create(user),
+        } : undefined),
     }
 }

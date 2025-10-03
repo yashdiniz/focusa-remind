@@ -6,8 +6,8 @@ import { tool } from "ai";
 import { validateTimezone } from "../utils";
 import { generateSummaryPrompt } from "../agent";
 
-const bio = (user: User) => tool({
-    name: "bio",
+const keepNote = (user: User) => tool({
+    name: "keepNote",
     description: "Trigger when asked (“remember/store/forget/delete”) or on long-term info; include occupation, hobbies, recurring goals, priorities, deadlines, stable facts (“prefers concise answers,” “codes daily,” “data engineer”), accountability context and useful long-term info; exclude trivia, fleeting states (“ate pizza,” “tired”), sensitive data, one-offs. Keep existing points unless contradicted/flagged; confirm when uncertain",
     inputSchema: z.object({
         summary: z.string().describe("one-line changes to bio"),
@@ -71,7 +71,7 @@ export function userTools(user: User) {
         "userInfo": upsert(user),
         // add these only after onboarding
         ...(user.metadata ? {
-            "bio": bio(user),
+            "keepNote": keepNote(user),
         } : undefined),
     }
 }
