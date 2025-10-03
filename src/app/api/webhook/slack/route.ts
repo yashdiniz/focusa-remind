@@ -34,4 +34,11 @@ export async function POST(req: NextRequest) {
     if (res.data.type === 'url_verification') {
         return new Response(res.data.challenge)
     }
+
+    console.log('slack webhook invocation', res.data)
+    return new Response(JSON.stringify(res.data), {
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
 }
