@@ -6,8 +6,9 @@ import { WebClient } from '@slack/web-api';
 import type { NextRequest } from 'next/server';
 import z from 'zod';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-const bot = new WebClient(env.SLACK_BOT_TOKEN)
+const token = env.SLACK_BOT_TOKEN
+if (!token) throw new Error('SLACK_BOT_TOKEN is not set');
+const bot = new WebClient(token)
 
 const inputSchema = z.object({
     type: z.enum([
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (body.data.type === 'url_verification') {
         return new Response(body.data.challenge)
     }
-    if (body.data.type === 'event_callback') {
+    if (body.data.type === 'event_callback' && body.data.event.user !== env.SLACK_BOT_USER) {
         await bot.chat.postMessage({
             channel: body.data.event.channel,
             markdown_text: 'Echo:\n' + body.data.event.text,

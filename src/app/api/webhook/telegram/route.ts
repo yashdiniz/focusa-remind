@@ -11,10 +11,7 @@ import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 
 const token = env.TELEGRAM_BOT_TOKEN;
-if (!token) {
-    throw new Error('TELEGRAM_BOT_TOKEN is not set');
-}
-
+if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
 const bot = new Bot(token);
 
 bot.on('message:text', async (ctx) => {
