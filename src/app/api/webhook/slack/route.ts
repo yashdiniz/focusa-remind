@@ -7,9 +7,19 @@ import type { NextRequest } from 'next/server';
 import z from 'zod';
 
 const inputSchema = z.object({
-    type: z.string(),
+    type: z.enum([
+        'url_verification',
+        'event_callback',
+    ]),
     token: z.string(),
-    challenge: z.string(),
+    challenge: z.string().optional(),
+    event: z.object({
+        type: z.enum(['message']),
+        channel: z.string(),
+        user: z.string(),
+        text: z.string(),
+        channel_type: z.enum(['im']),
+    }),
 })
 
 // const token = env.SLACK_BOT_TOKEN;
@@ -20,10 +30,10 @@ const inputSchema = z.object({
 // const bot = new WebClient(token)
 
 export async function POST(req: NextRequest) {
-    const res = inputSchema.safeParse(await req.json())
-    if (!res.success) {
-        console.error("Invalid input to /api/webhook/slack:", res.error);
-        return new Response(res.error.message, {
+    const body = inputSchema.safeParse(await req.json())
+    if (!body.success) {
+        console.error("Invalid input to /api/webhook/slack:", body.error);
+        return new Response(body.error.message, {
             status: 400,
             headers: {
                 'Content-Type': 'application/json',
@@ -31,12 +41,16 @@ export async function POST(req: NextRequest) {
         })
     }
 
-    if (res.data.type === 'url_verification') {
-        return new Response(res.data.challenge)
+    console.log('slack webhook invocation', body.data)
+    if (body.data.type === 'url_verification') {
+        return new Response(body.data.challenge)
+    }
+    if (body.data.type === 'event_callback') {
+        return new Response(body.data.event.text)
     }
 
-    console.log('slack webhook invocation', res.data)
-    return new Response(JSON.stringify(res.data), {
+    // otherwise ECHO back
+    return new Response(JSON.stringify(body.data), {
         headers: {
             'Content-Type': 'application/json',
         }
