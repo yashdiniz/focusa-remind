@@ -2,7 +2,11 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 import { env } from '@/env';
+import { replyFromHistory } from '@/packages/ai';
+import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { WebClient } from '@slack/web-api';
+import { waitUntil } from '@vercel/functions';
+import { encodingForModel } from 'js-tiktoken';
 import type { NextRequest } from 'next/server';
 import z from 'zod';
 
@@ -37,16 +41,74 @@ export async function POST(req: NextRequest) {
             }
         })
     }
-
-    console.log('slack webhook invocation', body.data)
+    // quickly respond with challenge
     if (body.data.type === 'url_verification') {
         return new Response(body.data.challenge)
     }
-    if (body.data.type === 'event_callback' && body.data.event.user !== env.SLACK_BOT_USER) {
+    // quickly respond with unsupported message types
+    if (body.data.type !== 'event_callback') {
         await bot.chat.postMessage({
             channel: body.data.event.channel,
-            markdown_text: 'Echo:\n' + body.data.event.text,
+            markdown_text: 'You cannot communicate with me this way just yet!',
         })
+    }
+    // skip replying if the user message received is from the bot itself
+    if (body.data.event.user === env.SLACK_BOT_USER) {
+        return new Response(JSON.stringify(body.data), {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+    }
+
+    try {
+        const user = await getUserFromIdentifier('slack', body.data.event.channel, true)
+        if (!user) {
+            console.error('User not found for chatId', body.data.event.channel)
+            return new Response('User not found', { status: 401 })
+        }
+
+        const msgs = await getLatestMessagesForUser(user);
+        console.log(`${user.platform}-${user.identifier}`, 'Loaded', msgs.length, 'messages from history for user');
+
+        if (!user.metadata) {
+            const info = await bot.users.info({ user: body.data.event.user })
+            if (!info.ok) {
+                console.error('Could not fetch user info', info.error)
+                return new Response('User info fetch failed', { status: 403 })
+            }
+            // assist user onboarding with slack info
+            msgs.push({
+                role: 'user',
+                content: `Data from slack to assist onboarding: ${JSON.stringify(info)}`
+            })
+        }
+
+        msgs.push({ role: 'user', content: body.data.event.text })
+
+        const result = await replyFromHistory(msgs, user);
+
+        // Save user message and assistant response in a transaction
+        const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
+        await saveMessagesForUser(user, [
+            // TODO: use the correct tokenizer based on the model used to get the correct token count
+            { role: 'user', content: body.data.event.text, tokenCount: encodingForModel('gpt-3.5-turbo').encode(body.data.event.text).length },
+            ...responses, // Don't save system messages
+        ])
+
+        waitUntil((async () => {
+            await bot.chat.postMessage({
+                channel: body.data.event.channel,
+                markdown_text: result.text.trim(),
+            })
+        })())
+    } catch (e) {
+        console.error('Error processing message:', e)
+        await bot.chat.postMessage({
+            channel: body.data.event.channel,
+            markdown_text: 'Sorry, something went wrong while processing your message. Please try agian later.',
+        })
+        return new Response('Error processing message', { status: 500 })
     }
 
     // otherwise ECHO back
