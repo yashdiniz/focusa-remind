@@ -49,11 +49,12 @@ bot.on('message:text', async (ctx) => {
             if (result.usage.outputTokens) {
                 await delay(10000 * result.usage.outputTokens / MAX_OUTPUT_TOKENS); // Simulate typing delay based on output tokens
             }
-            await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(), ctx.message.message_id, interval) // Echo the received message
+            if (!result.text.trim()) await botSendMessage(bot, ctx.chatId.toString(), "ℹ️ bot replied with empty text", ctx.message.message_id, interval)
+            else await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(), ctx.message.message_id, interval)
         })());
     } catch (e) {
         console.error('Error processing message:', e);
-        await botSendMessage(bot, ctx.chatId.toString(), "Sorry, something went wrong while processing your message. Please try again later.",
+        await botSendMessage(bot, ctx.chatId.toString(), "⚠️ Sorry, something went wrong while processing your message. Please try again later.",
             ctx.message.message_id, interval);
         return;
     }
