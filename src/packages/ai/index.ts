@@ -43,7 +43,7 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
 export async function replyFromHistory(messages: (UserModelMessage | AssistantModelMessage | ToolModelMessage)[], user: User): Promise<GenerateTextResult<ToolSet, string>> {
     const reminders = await db.query.reminders.findMany({
         where: (reminders, { eq, not, and }) => and(
-            eq(reminders.userId, user.id), not(reminders.deleted),
+            eq(reminders.userId, user.id), not(reminders.sent), not(reminders.deleted),
         ),
         orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)],
         limit: 5,

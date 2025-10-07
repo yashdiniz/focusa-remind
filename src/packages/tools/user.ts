@@ -17,7 +17,7 @@ const keepNote = (user: User) => tool({
         if (user.metadata) {
             const reminders = await db.query.reminders.findMany({
                 where: (reminders, { eq, not, and }) => and(
-                    eq(reminders.userId, user.id), not(reminders.deleted),
+                    eq(reminders.userId, user.id), not(reminders.sent), not(reminders.deleted),
                 ),
                 orderBy: (reminders, { asc, desc }) => [asc(reminders.dueAt), desc(reminders.createdAt)]
             }).execute()

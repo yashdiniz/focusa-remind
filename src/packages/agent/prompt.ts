@@ -60,11 +60,11 @@ Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
 Keep existing information unless contradicted/flagged for removal.
 ---
 <activeReminders>
-${reminders.map(({ deleted, title, dueAt, rrule, description }) => {
+${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
     const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
     const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'not recurring'
     const desc = description ?? 'no description'
-    return `- ${deleted ? 'done' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
+    return `- ${deleted || sent ? 'done' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
   }).join('\n')}
 </activeReminders>
 [[previousSummary: ${user.metadata?.summary ?? 'Empty summary'}]]
