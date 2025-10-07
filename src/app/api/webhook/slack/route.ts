@@ -3,6 +3,7 @@ export const fetchCache = 'force-no-store';
 
 import { env } from '@/env';
 import { replyFromHistory } from '@/packages/ai';
+import { botSendMessage } from '@/packages/slack';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { WebClient } from '@slack/web-api';
 import { waitUntil } from '@vercel/functions';
@@ -49,10 +50,7 @@ export async function POST(req: NextRequest) {
     }
     // quickly respond with unsupported message types
     if (body.data.type !== 'event_callback') {
-        await bot.chat.postMessage({
-            channel: body.data.event.channel,
-            markdown_text: 'You cannot communicate with me this way just yet!',
-        })
+        await botSendMessage(bot, body.data.event.channel, 'You cannot communicate with me this way just yet!')
     }
     // skip replying if the user message received is from the bot itself
     if (body.data.event.user === env.SLACK_BOT_USER) {
@@ -99,15 +97,12 @@ export async function POST(req: NextRequest) {
         ])
 
         waitUntil((async () => {
-            if (!result.text.trim()) await bot.chat.postMessage({ channel: body.data.event.channel, markdown_text: "ℹ️ _bot replied with empty text_" })
-            else await bot.chat.postMessage({ channel: body.data.event.channel, markdown_text: result.text.trim() })
+            if (!result.text.trim()) await botSendMessage(bot, body.data.event.channel, "ℹ️ _bot replied with empty text_")
+            else await botSendMessage(bot, body.data.event.channel, result.text.trim())
         })())
     } catch (e) {
         console.error('Error processing message:', e)
-        await bot.chat.postMessage({
-            channel: body.data.event.channel,
-            markdown_text: '⚠️ Sorry, something went wrong while processing your message. Please try again later.',
-        })
+        await botSendMessage(bot, body.data.event.channel, '⚠️ Sorry, something went wrong while processing your message. Please try again later.')
         return new Response('Error processing message', { status: 500 })
     }
 
