@@ -5,6 +5,7 @@ import { env } from "@/env";
 import { ACCOUNTABILITY_CHECKIN_PROMPT } from "@/packages/agent";
 import { botSendMessage as slackbotSendMessage } from "@/packages/slack";
 import { botSendMessage as telegrambotSendMessage } from "@/packages/telegram";
+import { humanTime } from "@/packages/utils";
 import { db } from "@/server/db";
 import { messages, reminders } from "@/server/db/schema";
 import { WebClient } from "@slack/web-api";
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     try {
         const rems = await db.query.reminders.findMany({
             where: (reminders, { lte, and, not }) => and(
-                not(reminders.sent), not(reminders.deleted), lte(reminders.dueAt, body.data.timestamp),
+                not(reminders.sent), not(reminders.deleted), lte(reminders.dueAt, new Date(body.data.timestamp.getUTCMilliseconds() - 15 * 60 * 1000)),
             ),
             with: {
                 user: {
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
         for (const reminder of rems) {
             await db.transaction(async tx => {
                 const user = reminder.user
-                const text = `Hey, just wanted to remind you!\n${reminder.title}\n${reminder.description}`.trim()
+                const text = `Hey, just wanted to remind you!\n\nYour reminder "${reminder.title}" due ${reminder.dueAt ? ' ' + humanTime(reminder.dueAt) : ''}!\nDescription: ${reminder.description}`.trim()
                 await tx.insert(messages).values({
                     userId: reminder.userId,
                     role: 'user',
