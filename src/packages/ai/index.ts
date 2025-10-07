@@ -2,6 +2,7 @@ import { groq } from '@ai-sdk/groq';
 import { generateText, stepCountIs, type AssistantModelMessage, type GenerateTextResult, type ToolModelMessage, type ToolSet, type UserModelMessage } from 'ai';
 import { agent, generateSystemPrompt } from '@/packages/agent';
 import type { User } from '@/server/db/schema';
+import { db } from '@/server/db';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -40,7 +41,14 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
  * @returns Response text from the AI model.
  */
 export async function replyFromHistory(messages: (UserModelMessage | AssistantModelMessage | ToolModelMessage)[], user: User): Promise<GenerateTextResult<ToolSet, string>> {
-    const result = await agent(user).generate({
+    const reminders = await db.query.reminders.findMany({
+        where: (reminders, { eq, not, and }) => and(
+            eq(reminders.userId, user.id), not(reminders.completed),
+        ),
+        orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)],
+        limit: 5,
+    }).execute()
+    const result = await agent(user, reminders).generate({
         providerOptions: {
             groq: {
                 user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
