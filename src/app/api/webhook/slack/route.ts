@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     if (!body.success) {
         console.error("Invalid input to /api/webhook/slack:", body.error);
         return new Response(body.error.message, {
-            status: 400,
+            status: 200,
             headers: {
                 'Content-Type': 'application/json',
             }
