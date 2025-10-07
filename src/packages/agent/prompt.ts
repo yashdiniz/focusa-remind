@@ -1,4 +1,4 @@
-import type { Reminder, User } from "@/server/db/schema";
+import type { ReminderSelect, User } from "@/server/db/schema";
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { humanTime } from "../utils";
@@ -52,7 +52,7 @@ export const FIRST_INTERACTION_PROMPT = `
  * @param reminders Recently added reminders by the user.
  * @returns summary prompt string.
  */
-export async function generateSummaryPrompt(user: User, summary: string, reminders: Reminder[]) {
+export async function generateSummaryPrompt(user: User, summary: string, reminders: ReminderSelect[]) {
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
   const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, concise and meaningful. Preserve essential context; no filler and extra prose.
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.

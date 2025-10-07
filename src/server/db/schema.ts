@@ -76,7 +76,8 @@ export const reminderRelations = relations(reminders, ({ one }) => ({
   user: one(users, { fields: [reminders.userId], references: [users.id] }),
 }))
 
-export type Reminder = typeof reminders.$inferSelect;
+export type ReminderSelect = typeof reminders.$inferSelect;
+export type ReminderInsert = typeof reminders.$inferInsert;
 
 // import { type AdapterAccount } from "next-auth/adapters";
 // export const accounts = createTable(
