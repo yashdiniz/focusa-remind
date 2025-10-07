@@ -63,12 +63,6 @@ export async function POST(req: NextRequest) {
         })
     }
 
-    // simulate typing
-    const message = await bot.chat.postMessage({
-        channel: body.data.event.channel,
-        markdown_text: '💬 Blue Remind is typing...',
-    })
-
     try {
         const user = await getUserFromIdentifier('slack', body.data.event.channel, true)
         if (!user) {
@@ -105,15 +99,12 @@ export async function POST(req: NextRequest) {
         ])
 
         waitUntil((async () => {
-            if (!message.ts) throw new Error('Message without timestamp not allowed')
-            if (!result.text.trim()) await bot.chat.update({ ts: message.ts, channel: body.data.event.channel, markdown_text: "ℹ️ _bot replied with empty text_" })
-            else await bot.chat.update({ ts: message.ts, channel: body.data.event.channel, markdown_text: result.text.trim() })
+            if (!result.text.trim()) await bot.chat.postMessage({ channel: body.data.event.channel, markdown_text: "ℹ️ _bot replied with empty text_" })
+            else await bot.chat.postMessage({ channel: body.data.event.channel, markdown_text: result.text.trim() })
         })())
     } catch (e) {
         console.error('Error processing message:', e)
-        if (!message.ts) throw new Error('Message without timestamp not allowed')
-        await bot.chat.update({
-            ts: message.ts,
+        await bot.chat.postMessage({
             channel: body.data.event.channel,
             markdown_text: '⚠️ Sorry, something went wrong while processing your message. Please try again later.',
         })
