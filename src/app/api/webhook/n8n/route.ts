@@ -11,6 +11,7 @@ import { WebClient } from "@slack/web-api";
 import { eq } from "drizzle-orm";
 import { Bot } from "grammy";
 import type { NextRequest } from "next/server";
+import { RRule } from "rrule";
 import z from "zod";
 
 const inputSchema = z.object({
@@ -74,7 +75,13 @@ export async function POST(req: NextRequest) {
                         content: text,
                     }
                 }).execute()
-                await tx.update(reminders).set({ sent: true }).where(eq(reminders.id, reminder.id)).execute()
+                await tx.update(reminders).set({
+                    sent: true,
+                    ...(reminder.rrule && reminder.dueAt ? {
+                        sent: false,
+                        dueAt: RRule.fromString(reminder.rrule).after(reminder.dueAt),
+                    } : null)
+                }).where(eq(reminders.id, reminder.id)).execute()
                 switch (user.platform) {
                     case 'slack':
                         console.log('send slack message')
