@@ -64,7 +64,8 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const reminders = createTable("reminder", d => ({
   ...idMixin,
   userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  completed: d.boolean("completed").notNull().default(false),
+  sent: d.boolean("sent").notNull().default(false), // basically flag to prevent spamming reminder
+  deleted: d.boolean("deleted").notNull().default(false), // basically completed flag
   title: d.text("title").notNull(),
   dueAt: timestamp("due_at", { withTimezone: true }),
   rrule: d.text("rrule"),
