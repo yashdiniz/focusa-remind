@@ -31,7 +31,9 @@ const inputSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-    const body = inputSchema.safeParse(await req.json())
+    const payload: unknown = await req.json()
+    console.log('Slack sent:', JSON.stringify(payload))
+    const body = inputSchema.safeParse(payload)
     if (!body.success) {
         console.error("Invalid input to /api/webhook/slack:", body.error);
         return new Response(body.error.message, {
