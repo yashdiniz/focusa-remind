@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
                 }
             })
         }
+        return new Response('success!')
     } catch (e) {
         if (e instanceof Error) {
             return new Response(`Error processing request: ${e.message}`, { status: 500 });
