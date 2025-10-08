@@ -45,7 +45,7 @@ export async function replyFromHistory(messages: (UserModelMessage | AssistantMo
         where: (reminders, { eq, not, and }) => and(
             eq(reminders.userId, user.id), not(reminders.sent), not(reminders.deleted),
         ),
-        orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)],
+        orderBy: (reminders, { asc, desc }) => [asc(reminders.dueAt), desc(reminders.createdAt)],
         limit: 5,
     }).execute()
     const result = await agent(user, reminders).generate({

@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         for (const reminder of rems) {
             await db.transaction(async tx => {
                 const user = reminder.user
-                const text = `Hey, just wanted to remind you!\n\nYour reminder "${reminder.title}" due ${reminder.dueAt ? ' ' + humanTime(reminder.dueAt) : ''}!\nDescription: ${reminder.description}`.trim()
+                const text = `Hey, just wanted to remind you!\n\nYour reminder "${reminder.title}" due${reminder.dueAt ? ' ' + humanTime(reminder.dueAt) : ''}!\nDescription: ${reminder.description}`.trim()
                 await tx.insert(messages).values({
                     userId: reminder.userId,
                     role: 'user',

@@ -19,7 +19,7 @@ const keepNote = (user: User) => tool({
                 where: (reminders, { eq, not, and }) => and(
                     eq(reminders.userId, user.id), not(reminders.sent), not(reminders.deleted),
                 ),
-                orderBy: (reminders, { asc, desc }) => [asc(reminders.dueAt), desc(reminders.createdAt)]
+                orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)]
             }).execute()
             const summary = await generateSummaryPrompt(user, input.summary, reminders)
             await db.update(users).set({
