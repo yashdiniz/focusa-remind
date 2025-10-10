@@ -16,10 +16,13 @@ const keepNote = (user: User) => tool({
         console.log(`${user.platform}-${user.identifier}`, "bio tool called with input:", input);
         if (user.metadata) {
             const reminders = await db.query.reminders.findMany({
-                where: (reminders, { eq, not, and }) => and(
-                    eq(reminders.userId, user.id), not(reminders.sent), not(reminders.deleted),
+                where: (reminders, { eq, and }) => and(
+                    eq(reminders.userId, user.id),
+                    // NOTE: PROBLEM! Would never get flagged for removal (since it would be filtered out)
+                    // not(reminders.sent), not(reminders.deleted),
                 ),
-                orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)]
+                orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)],
+                limit: 20,
             }).execute()
             const summary = await generateSummaryPrompt(user, input.summary, reminders)
             await db.update(users).set({
