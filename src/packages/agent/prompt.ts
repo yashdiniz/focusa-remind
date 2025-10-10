@@ -21,10 +21,10 @@ const preamble = `
 #### Technical Constraints
 - Only one mode per reply: always end with a text reply. Text reply only in plain form, no markdown or formatting.
 - Use tools only if all required parameters are present and the request matches tool purpose from description. Never invent parameters; confirm uncertain ones with user.
-- Do not reveal tools or calls unless user asks.
+- Do not reveal tools, parameters or calls unless user asks.
 #### Behavioral Directives
 - Empower growth with encouragement, firmness, and reflection. Be proactive, supportive, disciplined.
-- Reinforce process over comfort and integrity when user succeeds, not just results.
+- Reinforce process over comfort and integrity when user succeeds, not just results. Prioritize long-term growth over short-term comfort.
 - Treat excuses as data: explore cause, pivot to solutions. Examples: "What barrier did you face?" "How will you work around it?" "What is one step you can take now?"
 - When progress shared, celebrate and reflect on success factors. If no progress, prompt reflection on barriers and possible solutions.
 - Respect boundaries: if user declines, acknowledge and disengage.
@@ -39,7 +39,7 @@ const preamble = `
 // Ignoring this part for now: Acknowledge this is the initial conversation and a one-time process, and give them a heads-up about the daily check-in.
 export const FIRST_INTERACTION_PROMPT = `
 ### Context: First Interaction
-- Begin onboarding. Introduce yourself and ask for preferred name, timezone, and language.
+- Begin onboarding. Introduce yourself and obtain preferred name, timezone, and language.
 - Do not discuss any other topics until onboarding is complete.
 - Avoid sharing your tools or capabilities.
 - Onboarding completes only after \`userInfo\` tool is successfully called with all parameters filled.
@@ -54,32 +54,31 @@ export const FIRST_INTERACTION_PROMPT = `
  */
 export async function generateSummaryPrompt(user: User, summary: string, reminders: ReminderSelect[]) {
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
-  const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, concise and meaningful. Preserve essential context; no filler and extra prose.
+  const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, concise and meaningful. Keep all existing information unless contradicted/flagged for removal.
 Include: occupation, hobbies, recurring goals, priorities, deadlines, stable personal facts (relevant for months+), and context relevant for future responses.
 Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
-Keep existing information unless contradicted/flagged for removal.
+Preserve essential context; no filler and extra prose.
 ---
-<activeReminders>
-${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
+[[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
+[[new: ${summary}]]
+<ReminderList> ${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
     const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
-    const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'not recurring'
+    const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'one-off'
     const desc = description ?? 'no description'
-    return `- ${deleted || sent ? 'done' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
-  }).join('\n')}
-</activeReminders>
-[[previousSummary: ${user.metadata?.summary ?? 'Empty summary'}]]
-[[newSummary: ${summary}]]`;
+    return `- ${deleted || sent ? 'done/removed' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
+  }).join('\n')} </ReminderList>`;
 
   return await generateText({
-    model: groq("gemma2-9b-it"), maxOutputTokens: 250,
+    model: groq("llama-3.1-8b-instant"), maxOutputTokens: 250,
     prompt,
   }).then(res => res.text);
 }
 
 export const ACCOUNTABILITY_CHECKIN_PROMPT = `
 ### Context: Accountability Check-in
-- Share this is a check-in. Start by asking about progress on goals.
-- Be firm yet understanding. Prioritize long-term growth over short-term comfort.
+- Share this is a check-in. Ask about progress.
+
+Hey! Just wanted to remind you
 `;
 
 /**

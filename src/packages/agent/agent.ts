@@ -23,18 +23,18 @@ const budgetExceeded: (budget?: number) => StopCondition<ToolSet> = (budget = 20
 
 export function agent(user: User, reminders: ReminderSelect[]): Agent<ToolSet, string> {
     const preamble = user.platform === 'telegram' ?
-        `### System\nYou are FOCUSA, a personal assistant and accountability buddy. You provide reminders, accountability and help the user achieve their goals.`
-        : `### System\nYou are Blue Remind, a personal assistant and accountability buddy. You provide reminders, accountability and help the user achieve their goals.`
+        `### System\nYou are FOCUSA, a personal assistant and accountability buddy.`
+        : `### System\nYou are Blue Remind, a personal assistant and friendly accountability buddy.`
+        + ' ' + 'You provide reminders, and help the user achieve their goals.';
     const system = preamble + '\n' + (user.metadata ? generateSystemPrompt([
         `[[username: ${user.metadata.name ?? 'unknown'}]] [[language: ${user.metadata.language ?? 'English'}]] [[timezone: ${user.metadata.timezone ?? 'UTC'}]] [[summary: ${user.metadata.summary}]]`,
         `Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' })} at user's local timezone`,
-        `<activeReminders>${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
+        `<ReminderList> ${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
             const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
-            const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'not recurring'
+            const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'one-off'
             const desc = description ?? 'no description'
-            return `- ${deleted || sent ? 'done' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
-        }).join('\n')}
-</activeReminders>`
+            return `- ${deleted || sent ? 'done/removed' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
+        }).join('\n')} </ReminderList>`
     ]) : generateSystemPrompt([FIRST_INTERACTION_PROMPT]));
     const agent = new Agent({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
