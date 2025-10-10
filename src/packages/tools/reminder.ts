@@ -24,7 +24,8 @@ const create = (user: User) => {
                     if (z)
                         try {
                             const d = dayjs(z).tz('UTC')
-                            if (d.toDate().getTime() - Date.now() < 0) ctx.addIssue("must be future date")
+                            const seconds = (d.toDate().getTime() - Date.now()) / 1000
+                            if (seconds < 0) ctx.addIssue(`must be future date. due date shared is ${seconds} seconds ago`)
                         } catch (e) {
                             if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                         }
