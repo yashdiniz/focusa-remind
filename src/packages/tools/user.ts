@@ -3,34 +3,18 @@ import { eq } from "drizzle-orm";
 import { users, type User } from "@/server/db/schema";
 import { z } from "zod";
 import { tool } from "ai";
-import { validateTimezone } from "../utils";
-import { generateSummaryPrompt } from "../agent";
+import { updateBio, validateTimezone } from "../utils";
 
 const keepNote = (user: User) => tool({
     name: "keepNote",
-    description: "Trigger when asked (“remember/store/forget/delete”) or on long-term info; include occupation, hobbies, recurring goals, priorities, deadlines, stable facts (“prefers concise answers,” “codes daily,” “data engineer”), accountability context and useful long-term info; exclude trivia, fleeting states (“ate pizza,” “tired”), sensitive data, one-offs. Keep existing points unless contradicted/flagged; confirm when uncertain",
+    description: "Trigger when asked (“remember/store/forget/delete”) or when user shares long-term useful info; confirm when uncertain",
     inputSchema: z.object({
         summary: z.string().describe("one-line changes to bio"),
     }),
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "bio tool called with input:", input);
         if (user.metadata) {
-            const reminders = await db.query.reminders.findMany({
-                where: (reminders, { eq, and }) => and(
-                    eq(reminders.userId, user.id),
-                    // NOTE: PROBLEM! Would never get flagged for removal (since it would be filtered out)
-                    // not(reminders.sent), not(reminders.deleted),
-                ),
-                orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)],
-                limit: 20,
-            }).execute()
-            const summary = await generateSummaryPrompt(user, input.summary, reminders)
-            await db.update(users).set({
-                metadata: {
-                    ...user.metadata,
-                    summary,
-                }
-            }).where(eq(users.id, user.id)).execute();
+            const summary = await updateBio(user, input.summary)
             console.log(`${user.platform}-${user.identifier}`, "bio call occured", summary);
         } else return {
             error: "Cannot update bio without onboarding"

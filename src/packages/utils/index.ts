@@ -1,9 +1,10 @@
 import { db } from "@/server/db";
-import { users as Users, messages as Messages, type User } from "@/server/db/schema";
+import { users as Users, messages as Messages, type User, users } from "@/server/db/schema";
 import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
-import { asc, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { RRule } from "rrule";
 import type z from "zod";
+import { generateSummaryPrompt } from "../agent";
 
 /**
  * Checks if a given timezone string is valid according to the Intl.DateTimeFormat API.
@@ -168,4 +169,27 @@ export async function saveMessagesForUser(user: User,
         tokenCount: msg.tokenCount,
     }));
     return await db.insert(Messages).values(values).returning().execute();
+}
+
+export async function updateBio(user: User, new_summary: string) {
+    if (user.metadata) {
+        const reminders = await db.query.reminders.findMany({
+            where: (reminders, { eq, and }) => and(
+                eq(reminders.userId, user.id),
+                // NOTE: PROBLEM! Would never get flagged for removal (since it would be filtered out)
+                // not(reminders.sent), not(reminders.deleted),
+            ),
+            orderBy: (reminders, { desc }) => [desc(reminders.dueAt), desc(reminders.createdAt)],
+            limit: 20,
+        }).execute()
+        const summary = await generateSummaryPrompt(user, new_summary, reminders);
+        await db.update(users).set({
+            metadata: {
+                ...user.metadata,
+                summary,
+            }
+        }).where(eq(users.id, user.id)).execute();
+        return summary;
+    }
+    throw new Error('cannot update bio without onboarding')
 }

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { tool } from "ai";
 import { reminders, type ReminderInsert, type User } from "@/server/db/schema";
-import { humanTime, validateRRule } from "../utils";
+import { humanTime, updateBio, validateRRule } from "../utils";
 import { RRule } from "rrule";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
@@ -64,8 +64,9 @@ const create = (user: User) => {
                 rem.dueAt = setAt
                 rem.repeats = humanTime(setAt)
             }
-            const reminder = await db.insert(reminders).values(rem).returning({ id: reminders.id, }).execute()
+            const reminder = await db.insert(reminders).values(rem).returning({ id: reminders.id }).execute()
             if (reminder && reminder.length === 1 && reminder[0]?.id) {
+                await updateBio(user, '')
                 console.log(`${user.platform}-${user.identifier}`, "reminder.create occured", reminder[0]);
                 return { id: reminder[0].id, repeats: rem.repeats, setAt: rem.dueAt }
             }
