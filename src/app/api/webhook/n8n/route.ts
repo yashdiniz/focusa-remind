@@ -8,7 +8,9 @@ import { botSendMessage as telegrambotSendMessage } from "@/packages/telegram";
 import { humanTime } from "@/packages/utils";
 import { db } from "@/server/db";
 import { messages, reminders } from "@/server/db/schema";
+import { groq } from "@ai-sdk/groq";
 import { WebClient } from "@slack/web-api";
+import { Experimental_Agent as Agent } from "ai";
 import { eq } from "drizzle-orm";
 import { Bot } from "grammy";
 import type { NextRequest } from "next/server";
@@ -40,6 +42,11 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        // reusable agent for reminder generation
+        const agent = new Agent({
+            model: groq('llama-3.1-8b-instant'), maxOutputTokens: 100,
+            system: ACCOUNTABILITY_CHECKIN_PROMPT,
+        })
         const rems = await db.query.reminders.findMany({
             where: (reminders, { lte, and, not }) => and(
                 not(reminders.sent), not(reminders.deleted), lte(reminders.dueAt, new Date(body.data.timestamp.getTime() + 15 * 60 * 1000)),
@@ -57,40 +64,42 @@ export async function POST(req: NextRequest) {
         for (const reminder of rems) {
             await db.transaction(async tx => {
                 const user = reminder.user
-                const text = `Hey, just wanted to remind you!\n\nYour reminder "${reminder.title}" due${reminder.dueAt ? ' ' + humanTime(reminder.dueAt) : ''}!\nDescription: ${reminder.description}`.trim()
-                await tx.insert(messages).values({
-                    userId: reminder.userId,
-                    role: 'user',
-                    tokenCount: 40,
-                    content: {
+                const gen = await agent.generate({
+                    providerOptions: {
+                        groq: {
+                            user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
+                        },
+                    },
+                    messages: [{
                         role: 'user',
-                        content: ACCOUNTABILITY_CHECKIN_PROMPT,
-                    }
-                }).execute()
+                        content: `title:${reminder.title}\ndescription:${reminder.description}\n${reminder.dueAt ? `due:${humanTime(reminder.dueAt)}` : ''}`
+                    }]
+                })
                 await tx.insert(messages).values({
                     userId: reminder.userId,
                     role: 'assistant',
                     tokenCount: 30,
                     content: {
                         role: 'assistant',
-                        content: text,
+                        content: gen.text,
                     }
                 }).execute()
                 await tx.update(reminders).set({
                     sent: true,
                     ...(reminder.rrule && reminder.dueAt ? {
-                        sent: false,
+                        // sets to false if there's another due date, otherwise sets to true
+                        sent: RRule.fromString(reminder.rrule).after(reminder.dueAt) === null,
                         dueAt: RRule.fromString(reminder.rrule).after(reminder.dueAt),
                     } : null)
                 }).where(eq(reminders.id, reminder.id)).execute()
                 switch (user.platform) {
                     case 'slack':
                         console.log('send slack message')
-                        await slackbotSendMessage(slackbot, user.identifier, text)
+                        await slackbotSendMessage(slackbot, user.identifier, gen.text)
                         break;
                     case 'telegram':
                         console.log('send telegram message')
-                        await telegrambotSendMessage(telegrambot, user.identifier, text)
+                        await telegrambotSendMessage(telegrambot, user.identifier, gen.text)
                         break;
                 }
             })
