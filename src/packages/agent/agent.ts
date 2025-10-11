@@ -28,7 +28,7 @@ export function agent(user: User, reminders: ReminderSelect[]): Agent<ToolSet, s
         + ' ' + 'You provide reminders, and help the user achieve their goals.';
     const system = preamble + '\n' + (user.metadata ? generateSystemPrompt([
         `[[username: ${user.metadata.name ?? 'unknown'}]] [[language: ${user.metadata.language ?? 'English'}]] [[timezone: ${user.metadata.timezone ?? 'UTC'}]] [[summary: ${user.metadata.summary}]]`,
-        `Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' })} at user's local timezone`,
+        `Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone`,
         `<ReminderList> ${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
             const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
             const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'one-off'
