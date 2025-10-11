@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
                     }
                 }).execute()
                 await tx.update(reminders).set({
-                    sent: true,
+                    // reminders stop sending only after due date. (basically remind multiple times every 15 minutes)
+                    sent: reminder.dueAt !== null && (reminder.dueAt.getTime() <= Date.now()),
                     ...(reminder.rrule && reminder.dueAt ? {
                         // sets to false if there's another due date, otherwise sets to true
                         sent: RRule.fromString(reminder.rrule).after(reminder.dueAt) === null,

@@ -74,12 +74,7 @@ Preserve essential context; no filler and extra prose.
   }).then(res => res.text);
 }
 
-export const ACCOUNTABILITY_CHECKIN_PROMPT = `
-### Context: Accountability Check-in
-- Share this is a check-in. Ask about progress.
-
-Hey! Just wanted to remind you
-`;
+export const ACCOUNTABILITY_CHECKIN_PROMPT = `You're a friendly accountability buddy, and you missed to remind the user! Be supportive and friendly. Use the title, description and trigger to form a coherent sentence. Set the important details in **bold**. If the reminder is early, start with 'Heads Up!'`;
 
 /**
  * Generates a system prompt for the AI model.
