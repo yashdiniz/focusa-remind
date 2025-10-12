@@ -55,8 +55,8 @@ export const FIRST_INTERACTION_PROMPT = `
 export async function generateSummaryPrompt(user: User, summary: string, reminders: ReminderSelect[]) {
   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
   const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, avoid pronouns, concise and meaningful. Keep all existing information unless contradicted/flagged for removal.
+Exclude: one-off reminders, trivia, fleeting events, sensitive data.
 Include: occupation, hobbies, recurring goals, priorities, stable personal facts (relevant for months+), and context relevant for future responses.
-Exclude: trivia, fleeting events, sensitive data, one-off tasks/reminders.
 Preserve essential context avoid extra prose and filler; do not assume any extra details.
 ---
 [[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
