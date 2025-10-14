@@ -67,7 +67,7 @@ const create = (user: User) => {
             }
             const reminder = await db.insert(reminders).values(rem).returning({ id: reminders.id }).execute()
             if (reminder && reminder.length === 1 && reminder[0]?.id) {
-                await updateBio(user, '')
+                // await updateBio(user, '')
                 console.log(`${user.platform}-${user.identifier}`, "reminder.create occured", reminder[0]);
                 return { id: reminder[0].id, repeats: rem.repeats, setAt: rem.dueAt }
             }
