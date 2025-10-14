@@ -4,8 +4,8 @@ import { users, type User } from "@/server/db/schema";
 import { z } from "zod";
 import { tool } from "ai";
 import { /*updateBio,*/ validateTimezone } from "../utils";
-import { supermemoryTools } from "@supermemory/tools/ai-sdk";
 import { env } from "@/env";
+import { Supermemory } from "supermemory";
 
 // const keepNote = (user: User) => tool({
 //     name: "keepNote",
@@ -55,15 +55,93 @@ const upsert = (user: User) => tool({
     }
 });
 
+const searchMemories = (user: User, client: Supermemory) => tool({
+    description: "Search (recall) memories/details/information about the user or other facts or entities. Run when explicitly asked or when context about user's past choices would be helpful.",
+    inputSchema: z.object({
+        informationToGet: z
+            .string()
+            .describe("Terms to search for in the user's memories"),
+        includeFullDocs: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Whether to include the full document content in the response. Defaults to true for better AI context."),
+        limit: z
+            .number()
+            .optional()
+            .default(10)
+            .describe("Maximum number of results to return"),
+    }),
+    execute: async ({
+        informationToGet,
+        includeFullDocs = true,
+        limit = 10,
+    }) => {
+        try {
+            const response = await client.search.execute({
+                q: informationToGet,
+                containerTags: [`user_${user.platform}-${user.identifier}`],
+                limit,
+                chunkThreshold: 0.6,
+                includeFullDocs,
+            })
+
+            return {
+                success: true,
+                results: response.results,
+                count: response.results?.length || 0,
+            }
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            }
+        }
+    },
+})
+
+const addMemory = (user: User, client: Supermemory) => tool({
+    description: "Add (remember) memories/details/information about the user or other facts or entities. Run when explicitly asked or when the user mentions any information generalizable beyond the context of the current conversation.",
+    inputSchema: z.object({
+        memory: z
+            .string()
+            .describe("The text content of the memory to add. This should be a single sentence or a short paragraph."),
+    }),
+    execute: async ({ memory }) => {
+        try {
+            const metadata: Record<string, string | number | boolean> = {}
+
+            const response = await client.memories.add({
+                content: memory,
+                containerTags: [`user_${user.platform}-${user.identifier}`],
+                ...(Object.keys(metadata).length > 0 && { metadata }),
+            })
+
+            return {
+                success: true,
+                memory: response,
+            }
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            }
+        }
+    },
+})
+
 export function userTools(user: User) {
+    const client = new Supermemory({
+        apiKey: env.SUPERMEMORY_API_KEY,
+    })
+
     return {
         "userInfo": upsert(user),
         // add these only after onboarding
         ...(user.metadata ? {
             // "keepNote": keepNote(user),
-            ...supermemoryTools(env.SUPERMEMORY_API_KEY, {
-                containerTags: [`${user.platform}-${user.identifier}`],
-            }),
+            "searchMemories": searchMemories(user, client),
+            "addMemory": addMemory(user, client),
         } : undefined),
     }
 }

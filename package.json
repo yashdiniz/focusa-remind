@@ -26,7 +26,6 @@
     "@auth/drizzle-adapter": "^1.7.2",
     "@modelcontextprotocol/sdk": "^1.18.0",
     "@slack/web-api": "^7.10.0",
-    "@supermemory/tools": "^1.2.13",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
     "@trpc/client": "^11.0.0",
