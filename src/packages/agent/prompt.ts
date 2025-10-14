@@ -61,12 +61,13 @@ Preserve essential context avoid extra prose and filler; do not assume any extra
 ---
 [[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
 [[new: ${summary}]]
-<ReminderList> ${reminders.map(({ deleted, sent, title, dueAt, rrule, description }) => {
-    const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
-    const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'one-off'
+<ReminderList> ${reminders.map(({ deleted, priority, sent, title, dueAt, rrule, description }) => {
+    const time = dueAt ? `due ${humanTime(dueAt)}, ${dueAt.toISOString()}` : 'no due date'
+    const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}, ${rrule}` : 'one-off'
     const desc = description ?? 'no description'
-    return `- ${deleted || sent ? 'done/removed' : 'pending'}, ${time}, ${recurs}, ${title}, ${desc}`
-  }).join('\n')} </ReminderList>`;
+    return `- ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
+  }).join('\n')} </ReminderList>
+`;
 
   return await generateText({
     model: groq("llama-3.1-8b-instant"), maxOutputTokens: 250,

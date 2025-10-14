@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { tool } from "ai";
 import { reminders, type ReminderInsert, type User } from "@/server/db/schema";
-import { humanTime, updateBio, validateRRule } from "../utils";
+import { humanTime, /*updateBio,*/ validateRRule } from "../utils";
 import { RRule } from "rrule";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
@@ -13,10 +13,11 @@ dayjs.extend(timezone)
 const create = (user: User) => {
     return tool({
         name: "reminder.create",
-        description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. Check  output of `repeats`, share with user, and retry accordingly",
+        description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. Share output of `repeats` with user to confirm",
         inputSchema: z.object({
             title: z.string().describe("Reminder title"),
             type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder"),
+            priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority"),
             rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID, user local timezone. Optional").optional()
                 .superRefine(validateRRule),
             dueDate: z.string().describe("Due date in ISO8601, user local timezone. Must be future date. Optional").optional()
@@ -49,6 +50,7 @@ const create = (user: User) => {
                 userId: user.id,
                 title: input.title,
                 description: input.description ?? null,
+                priority: input.priority,
             }
             console.log(`${user.platform}-${user.identifier}`, "reminder.create tool called with input:", input);
             if (input.rrule) {

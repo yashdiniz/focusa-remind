@@ -68,6 +68,7 @@ export const reminders = createTable("reminder", d => ({
   deleted: d.boolean("deleted").notNull().default(false), // basically completed flag
   title: d.text("title").notNull(),
   dueAt: timestamp("due_at", { withTimezone: true }),
+  priority: d.text("priority", { enum: ['low', 'medium', 'high'] }).default('low'),
   rrule: d.text("rrule"),
   description: d.text("description"),
   ...createdAtMixin, ...updatedAtMixin,
