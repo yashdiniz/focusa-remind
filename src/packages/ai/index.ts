@@ -1,8 +1,10 @@
 import { groq } from '@ai-sdk/groq';
 import { generateText, stepCountIs, type AssistantModelMessage, type GenerateTextResult, type ToolModelMessage, type ToolSet, type UserModelMessage } from 'ai';
 import { agent, generateSystemPrompt } from '@/packages/agent';
-import type { User } from '@/server/db/schema';
+import { reminders, type User } from '@/server/db/schema';
 import { db } from '@/server/db';
+import { union } from 'drizzle-orm/pg-core';
+import { and, asc, desc, eq, not } from 'drizzle-orm';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -41,14 +43,24 @@ export async function generateResponse(prompt: string, system?: string, chatId?:
  * @returns Response text from the AI model.
  */
 export async function replyFromHistory(messages: (UserModelMessage | AssistantModelMessage | ToolModelMessage)[], user: User): Promise<GenerateTextResult<ToolSet, string>> {
-    const reminders = await db.query.reminders.findMany({
-        where: (reminders, { eq, not, and }) => and(
-            eq(reminders.userId, user.id), not(reminders.sent), not(reminders.deleted),
-        ),
-        orderBy: (reminders, { asc, desc }) => [asc(reminders.dueAt), desc(reminders.createdAt)],
-        limit: 5,
-    }).execute()
-    const result = await agent(user, reminders).generate({
+    const rems = await union( // 1-3-5 rule
+        db.select().from(reminders).where(and(
+            eq(reminders.userId, user.id),
+            not(reminders.sent), not(reminders.deleted),
+            eq(reminders.priority, 'high'),
+        )).orderBy(asc(reminders.dueAt), desc(reminders.createdAt)).limit(1),
+        db.select().from(reminders).where(and(
+            eq(reminders.userId, user.id),
+            not(reminders.sent), not(reminders.deleted),
+            eq(reminders.priority, 'medium'),
+        )).orderBy(asc(reminders.dueAt), desc(reminders.createdAt)).limit(3),
+        db.select().from(reminders).where(and(
+            eq(reminders.userId, user.id),
+            not(reminders.sent), not(reminders.deleted),
+            eq(reminders.priority, 'low'),
+        )).orderBy(asc(reminders.dueAt), desc(reminders.createdAt)).limit(5),
+    ).execute()
+    const result = await agent(user, rems).generate({
         providerOptions: {
             groq: {
                 user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
