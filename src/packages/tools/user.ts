@@ -58,32 +58,13 @@ const upsert = (user: User) => tool({
 const searchMemories = (user: User, client: Supermemory) => tool({
     description: "Search (recall) memories/details/information about the user or other facts or entities. Run when explicitly asked or when context about user's past choices would be helpful.",
     inputSchema: z.object({
-        informationToGet: z
-            .string()
-            .describe("Terms to search for in the user's memories"),
-        includeFullDocs: z
-            .boolean()
-            .optional()
-            .default(true)
-            .describe("Whether to include the full document content in the response. Defaults to true for better AI context."),
-        limit: z
-            .number()
-            .optional()
-            .default(10)
-            .describe("Maximum number of results to return"),
+        informationToGet: z.string().describe("Terms to search for in the user's memories"),
     }),
-    execute: async ({
-        informationToGet,
-        includeFullDocs = true,
-        limit = 10,
-    }) => {
+    execute: async ({ informationToGet: q }) => {
         try {
             const response = await client.search.execute({
-                q: informationToGet,
+                q, limit: 10, chunkThreshold: 0.6, includeFullDocs: true,
                 containerTags: [`user_${user.platform}-${user.identifier}`],
-                limit,
-                chunkThreshold: 0.6,
-                includeFullDocs,
             })
 
             return {

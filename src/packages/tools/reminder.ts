@@ -17,7 +17,7 @@ const create = (user: User) => {
         inputSchema: z.object({
             title: z.string().describe("Reminder title"),
             type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder"),
-            priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority"),
+            priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority").default('low'),
             rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID, user local timezone. Optional").optional()
                 .superRefine(validateRRule),
             dueDate: z.string().describe("Due date in ISO8601, user local timezone. Must be future date. Optional").optional()
