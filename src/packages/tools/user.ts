@@ -4,8 +4,7 @@ import { users, type User } from "@/server/db/schema";
 import { z } from "zod";
 import { tool } from "ai";
 import { /*updateBio,*/ validateTimezone } from "../utils";
-import { env } from "@/env";
-import { Supermemory } from "supermemory";
+import type Supermemory from "supermemory";
 
 // const keepNote = (user: User) => tool({
 //     name: "keepNote",
@@ -111,11 +110,7 @@ const addMemory = (user: User, client: Supermemory) => tool({
     },
 })
 
-export function userTools(user: User) {
-    const client = new Supermemory({
-        apiKey: env.SUPERMEMORY_API_KEY,
-    })
-
+export function userTools(user: User, client: Supermemory) {
     return {
         "userInfo": upsert(user),
         // add these only after onboarding
