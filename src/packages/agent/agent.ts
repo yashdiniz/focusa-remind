@@ -3,8 +3,7 @@ import { Experimental_Agent as Agent, stepCountIs, type StopCondition, type Tool
 import { FIRST_INTERACTION_PROMPT, generateSystemPrompt } from "./prompt";
 import { tools } from "@/packages/tools";
 import type { ReminderSelect, User } from "@/server/db/schema";
-import { humanTime } from "../utils";
-import { rrulestr } from "rrule";
+import { reminderListToString } from "../utils";
 
 const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -29,12 +28,7 @@ export function agent(user: User, reminders: ReminderSelect[]): Agent<ToolSet, s
     const system = preamble + '\n' + (user.metadata ? generateSystemPrompt([
         `[[username: ${user.metadata.name ?? 'unknown'}]] [[language: ${user.metadata.language ?? 'English'}]] [[timezone: ${user.metadata.timezone ?? 'UTC'}]] [[summary: ${user.metadata.summary}]]`,
         `Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone`,
-        `<ReminderList> ${reminders.map(({ deleted, priority, sent, title, dueAt, rrule, description }) => {
-            const time = dueAt ? `due ${humanTime(dueAt)}, ${dueAt.toISOString()}` : 'no due date'
-            const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}, ${rrule}` : 'one-off'
-            const desc = description ?? 'no description'
-            return `- ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
-        }).join('\n')} </ReminderList>`
+        reminderListToString(reminders),
     ]) : generateSystemPrompt([FIRST_INTERACTION_PROMPT]));
     const agent = new Agent({
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,

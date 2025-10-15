@@ -1,8 +1,7 @@
 import type { ReminderSelect, User } from "@/server/db/schema";
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
-import { humanTime } from "../utils";
-import { rrulestr } from "rrule";
+import { reminderListToString } from "../utils";
 
 /*
 === NOTE ===
@@ -61,12 +60,7 @@ Preserve essential context avoid extra prose and filler; do not assume any extra
 ---
 [[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
 [[new: ${summary}]]
-<ReminderList> ${reminders.map(({ deleted, priority, sent, title, dueAt, rrule, description }) => {
-    const time = dueAt ? `due ${humanTime(dueAt)}, ${dueAt.toISOString()}` : 'no due date'
-    const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}, ${rrule}` : 'one-off'
-    const desc = description ?? 'no description'
-    return `- ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
-  }).join('\n')} </ReminderList>
+${reminderListToString(reminders)}
 `;
 
   return await generateText({

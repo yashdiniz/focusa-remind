@@ -1,8 +1,8 @@
 import { db } from "@/server/db";
-import { users as Users, messages as Messages, type User, users } from "@/server/db/schema";
+import { users as Users, messages as Messages, type User, users, type ReminderSelect } from "@/server/db/schema";
 import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
 import { asc, eq, sql } from "drizzle-orm";
-import { RRule } from "rrule";
+import { RRule, rrulestr } from "rrule";
 import type z from "zod";
 import { generateSummaryPrompt } from "../agent";
 
@@ -169,6 +169,15 @@ export async function saveMessagesForUser(user: User,
         tokenCount: msg.tokenCount,
     }));
     return await db.insert(Messages).values(values).returning().execute();
+}
+
+export function reminderListToString(reminders: ReminderSelect[]) {
+    return `<ReminderList> ${reminders.map(({ deleted, priority, sent, title, dueAt, rrule, description }) => {
+        const time = dueAt ? `due ${humanTime(dueAt)}, ${dueAt.toISOString()}` : 'no due date'
+        const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}, ${rrule}` : 'one-off'
+        const desc = description ?? 'no description'
+        return `- ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
+    }).join('\n')} </ReminderList>`
 }
 
 export async function updateBio(user: User, new_summary: string) {
