@@ -34,7 +34,7 @@ export function agent(user: User, reminders: ReminderSelect[]): Agent<ToolSet, s
         model, maxOutputTokens: MAX_OUTPUT_TOKENS,
         system,
         stopWhen: [
-            stepCountIs(5), // Stop after 5 steps
+            stepCountIs(10),
             budgetExceeded(3000),
         ],
         tools: tools(user),
