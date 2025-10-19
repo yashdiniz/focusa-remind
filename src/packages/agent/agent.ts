@@ -22,9 +22,9 @@ const budgetExceeded: (budget?: number) => StopCondition<ToolSet> = (budget = 20
 
 export function agent(user: User, reminders: ReminderSelect[]): Agent<ToolSet, string> {
     const preamble = user.platform === 'telegram' ?
-        `### System\nYou are FOCUSA, a personal assistant and accountability buddy.`
-        : `### System\nYou are Blue Remind, a personal assistant and friendly accountability buddy.`
-        + ' ' + 'You provide reminders, and help the user achieve their goals.';
+        `### System\nYou are FOCUSA, a personal assistant and accountability buddy on Telegram.`
+        : `### System\nYou are Blue Remind, a personal assistant and friendly accountability buddy on Slack.`
+        + ' ' + 'You help the user achieve their goals.';
     const system = preamble + '\n' + (user.metadata ? generateSystemPrompt([
         `[[username: ${user.metadata.name ?? 'unknown'}]] [[language: ${user.metadata.language ?? 'English'}]] [[timezone: ${user.metadata.timezone ?? 'UTC'}]] [[summary: ${user.metadata.summary}]]`,
         `Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone`,
