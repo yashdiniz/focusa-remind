@@ -13,20 +13,20 @@ dayjs.extend(timezone)
 
 const create = (user: User, client: Supermemory) => tool({
     name: "reminder.create",
-    description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. Share output of `repeats` with user to confirm",
+    description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. If no time provided, assume user means a few hours ahead. Share output of `repeats` with user to confirm",
     inputSchema: z.object({
         title: z.string().describe("Reminder title"),
         type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder"),
         priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority").default('low'),
-        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID, user local timezone. Optional").optional()
+        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional()
             .superRefine(validateRRule),
-        dueDate: z.string().describe("Due date in ISO8601, user local timezone. Must be future date. Optional").optional()
+        dueDate: z.string().describe("Due date in ISO8601, always in user local timezone. Optional").optional()
             .superRefine((z, ctx) => {
                 if (z)
                     try {
                         const d = dayjs(z).tz('UTC')
                         const seconds = (d.toDate().getTime() - Date.now()) / 1000
-                        if (seconds < 0) ctx.addIssue(`must be future date. due date shared is ${seconds} seconds ago`)
+                        if (seconds < 0) ctx.addIssue(`must be future date, ask user if they want to set for a few hours ahead`)
                     } catch (e) {
                         if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                     }
