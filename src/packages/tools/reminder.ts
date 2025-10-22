@@ -20,13 +20,13 @@ const create = (user: User, client: Supermemory) => tool({
         priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority").default('low'),
         rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional()
             .superRefine(validateRRule),
-        dueDate: z.string().describe("Due date in ISO8601, always in user local timezone. Optional").optional()
+        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Optional").optional()
             .superRefine((z, ctx) => {
                 if (z)
                     try {
-                        const d = dayjs(z).tz('UTC')
+                        const d = dayjs.tz(z, user.metadata?.timezone ?? 'UTC').tz('UTC')
                         const seconds = (d.toDate().getTime() - Date.now()) / 1000
-                        if (seconds < 0) ctx.addIssue(`must be future date, ask user if they want to set for a few hours ahead`)
+                        if (seconds < 0) ctx.addIssue(`error: must be future date, ask user to set a few hours ahead`)
                     } catch (e) {
                         if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                     }
