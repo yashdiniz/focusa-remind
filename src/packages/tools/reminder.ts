@@ -24,9 +24,8 @@ const create = (user: User, client: Supermemory) => tool({
             .superRefine((z, ctx) => {
                 if (z)
                     try {
-                        const d = dayjs.tz(z, user.metadata?.timezone ?? 'UTC').tz('UTC')
-                        const seconds = (d.toDate().getTime() - Date.now()) / 1000
-                        if (seconds < 0) ctx.addIssue(`error: must be future date, ask user to set a few hours ahead`)
+                        if (dayjs.tz(z, user.metadata?.timezone ?? 'UTC').tz('UTC').isBefore(dayjs()))
+                            ctx.addIssue('error: must be future date, ask user to set a few hours ahead')
                     } catch (e) {
                         if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                     }
