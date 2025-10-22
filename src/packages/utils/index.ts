@@ -5,7 +5,6 @@ import { asc, eq, sql } from "drizzle-orm";
 import { RRule, rrulestr } from "rrule";
 import type z from "zod";
 import { generateSummaryPrompt } from "../agent";
-import dayjs from "dayjs";
 
 /**
  * Checks if a given timezone string is valid according to the Intl.DateTimeFormat API.
@@ -174,8 +173,8 @@ export async function saveMessagesForUser(user: User,
 
 export function reminderListToString(reminders: ReminderSelect[]) {
     return `<ReminderList> ${reminders.map(({ deleted, priority, sent, title, dueAt, rrule, description }) => {
-        const time = dueAt ? `due ${humanTime(dueAt)}, ${dayjs(dueAt).format('YYYY-MM-DD HH:MM')}` : 'no due date'
-        const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}, ${rrule}` : 'one-off'
+        const time = dueAt ? `due ${humanTime(dueAt)}` : 'no due date'
+        const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'one-off'
         const desc = description ?? 'no description'
         return `- ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
     }).join('\n')} </ReminderList>`

@@ -62,7 +62,7 @@ const create = (user: User, client: Supermemory) => tool({
             rem.repeats = r.toText()
         }
         if (input.dueDate) {
-            const setAt = dayjs(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate()
+            const setAt = dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate()
             rem.dueAt = setAt
             rem.repeats = humanTime(setAt)
         }
