@@ -93,7 +93,7 @@ const addMemory = (user: User, client: Supermemory) => tool({
 
             const response = await client.memories.add({
                 content: memory,
-                containerTags: [`user_${user.platform}-${user.identifier}`],
+                containerTag: `user_${user.platform}-${user.identifier}`,
                 ...(Object.keys(metadata).length > 0 && { metadata }),
             })
 

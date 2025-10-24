@@ -68,9 +68,9 @@ const create = (user: User, client: Supermemory) => tool({
         }
         const reminder = await db.insert(reminders).values(rem).returning().execute()
         if (reminder && reminder.length === 1 && reminder[0]?.id) {
-            await client.memories.add({
-                content: `User added a new reminder: ${reminderListToString(reminder)}`,
-                containerTags: [`user_${user.platform}-${user.identifier}`],
+            if (input.type === 'recurring') await client.memories.add({
+                content: `User added a new reminder: ${reminderListToString(user, reminder)}`,
+                containerTag: `user_${user.platform}-${user.identifier}`,
             })
             // await updateBio(user, '')
             console.log(`${user.platform}-${user.identifier}`, "reminder.create occured", reminder[0]);

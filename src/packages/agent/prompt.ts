@@ -62,7 +62,7 @@ Preserve essential context avoid extra prose and filler; do not assume any extra
 ---
 [[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
 [[new: ${summary}]]
-${reminderListToString(reminders)}
+${reminderListToString(user, reminders)}
 `;
 
   return await generateText({
