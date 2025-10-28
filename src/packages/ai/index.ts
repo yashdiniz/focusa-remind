@@ -5,6 +5,7 @@ import { reminders, type User } from '@/server/db/schema';
 import { db } from '@/server/db';
 import { union } from 'drizzle-orm/pg-core';
 import { and, asc, desc, eq, not } from 'drizzle-orm';
+import { experimental_transcribe as transcribe } from 'ai';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -71,4 +72,17 @@ export async function replyFromHistory(messages: (UserModelMessage | AssistantMo
     console.log(result.usage, 'AI response:', result.text);
     console.log('AI content:', JSON.stringify(result.response.messages));
     return result;
+}
+
+/**
+ * Transcribes audio content to text using the AI model.
+ * @param url 
+ */
+export async function transcribeAudio(url: URL): Promise<string> {
+    const transcript = await transcribe({
+        model: groq.transcription('whisper-large-v3-turbo'),
+        audio: url,
+    });
+    console.log('lang:', transcript.language, 'Transcription result:', transcript.text);
+    return transcript.text;
 }

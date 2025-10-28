@@ -94,6 +94,23 @@ export function humanTime(seconds: Date | number) {
 }
 
 /**
+ * Gets the content of a URL as a Buffer.
+ */
+export async function getUrlAsBuffer(url: string): Promise<Buffer> {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+    } catch (error) {
+        console.error('Error fetching URL:', error);
+        throw error;
+    }
+}
+
+/**
  * Fetches a user from the database based on platform and chatId/channelId.
  * @param platform currently only 'telegram' & 'slack' is supported
  * @param chatId chatId from the platform

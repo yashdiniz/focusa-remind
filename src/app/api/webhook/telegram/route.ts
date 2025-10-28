@@ -5,8 +5,8 @@ import { env } from '@/env';
 import { botIsTyping, botSendMessage } from '@/packages/telegram';
 import { Bot, webhookCallback } from 'grammy';
 import { waitUntil } from '@vercel/functions';
-import { replyFromHistory, MAX_OUTPUT_TOKENS } from '@/packages/ai';
-import { delay } from '@ai-sdk/provider-utils';
+import { replyFromHistory, MAX_OUTPUT_TOKENS, transcribeAudio } from '@/packages/ai';
+import { delay, type UserModelMessage } from '@ai-sdk/provider-utils';
 import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 
@@ -14,9 +14,22 @@ const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
 const bot = new Bot(token);
 
-bot.on('message:text', async (ctx) => {
+bot.on('message', async (ctx) => {
     const interval = await botIsTyping(bot, ctx.chatId.toString());
-    console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text);
+    if (ctx.message.voice) {
+        const voice = ctx.message.voice;
+        console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, `Voice message of duration ${voice.duration} seconds`, voice.file_id);
+        const file = await ctx.getFile()
+        if (file.file_path) {
+            const text = await transcribeAudio(new URL(file.file_path, `https://api.telegram.org/file/bot${token}/`));
+            console.log('Transcribed text:', text);
+            ctx.message.text = text;
+        }
+    }
+    if (!ctx.message.text && !ctx.message.photo)
+        return await botSendMessage(bot, ctx.chatId.toString(), "⚠️ We currently only support text messages and photos. We are working to provide support for this!",
+            ctx.message.message_id, interval);
+    console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text ?? ctx.message.caption);
 
     try {
         // get user session, create if not exists
@@ -33,7 +46,30 @@ bot.on('message:text', async (ctx) => {
             // assist user onboarding with telegram info
             msgs.push({ role: 'user', content: `Data from telegram to assist onboarding: ${JSON.stringify(ctx.from)}. Do not assume timezone, please ask.` })
         }
-        msgs.push({ role: 'user', content: ctx.message.text })
+
+        let message: UserModelMessage;
+        if (ctx.message.photo) {
+            const photos = ctx.message.photo;
+            const content: UserModelMessage['content'] = [
+                {
+                    type: 'text',
+                    text: ctx.message.caption || 'Describe the images attached.',
+                }
+            ]
+            for (const photo of photos) {
+                console.log('Photo size:', photo.width, 'x', photo.height, 'file_id:', photo.file_id);
+                const image = await ctx.api.getFile(photo.file_id)
+                if (image.file_path) content.push({
+                    type: 'image',
+                    image: new URL(`${image.file_path}?fileid=${photo.file_id}`, `https://api.telegram.org/file/bot${token}/`),
+                });
+            }
+            message = { role: 'user', content };
+        } else if (ctx.message.text) {
+            message = { role: 'user', content: ctx.message.text };
+        } else {
+            throw new Error('No text or photo found in the message.');
+        }
 
         const result = await replyFromHistory(msgs, user);
 
@@ -41,7 +77,7 @@ bot.on('message:text', async (ctx) => {
         const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
             // TODO: use the correct tokenizer based on the model used to get the correct token count
-            { role: 'user', content: ctx.message.text, tokenCount: encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length },
+            { role: 'user', content: message.content, tokenCount: ctx.message.text ? encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length : 512 },
             ...responses, // Don't save system messages
         ])
 
