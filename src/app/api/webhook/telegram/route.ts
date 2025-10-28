@@ -53,7 +53,7 @@ bot.on('message', async (ctx) => {
             const content: UserModelMessage['content'] = [
                 {
                     type: 'text',
-                    text: ctx.message.caption || 'Describe the images attached.',
+                    text: ctx.message.caption ?? 'Describe the images attached.',
                 }
             ]
             for (const photo of photos) {
