@@ -42,22 +42,17 @@ bot.on('message', async (ctx) => {
         const msgs = await getLatestMessagesForUser(user);
         console.log(`${user.platform}-${user.identifier}`, 'Loaded', msgs.length, 'messages from history for user');
 
-        if (!user.metadata) {
-            // assist user onboarding with telegram info
-            msgs.push({ role: 'user', content: `Data from telegram to assist onboarding: ${JSON.stringify(ctx.from)}. Do not assume timezone, please ask.` })
-        }
-
         let message: UserModelMessage;
         if (ctx.message.photo) {
-            const photos = ctx.message.photo;
+            const photo = ctx.message.photo[2] ?? ctx.message.photo[0]; // either get SD or thumbnail (Telegram sends 4 sizes)
             const content: UserModelMessage['content'] = [
                 {
                     type: 'text',
-                    text: ctx.message.caption ?? 'Describe the images attached.',
+                    text: ctx.message.caption ?? 'Describe the image attached.',
                 }
             ]
-            for (const photo of photos) {
-                console.log('Photo size:', photo.width, 'x', photo.height, 'file_id:', photo.file_id);
+            if (photo) {
+                console.log('Photo size:', `${photo.width}x${photo.height}`, 'file_id:', photo.file_id);
                 const image = await ctx.api.getFile(photo.file_id)
                 if (image.file_path) content.push({
                     type: 'image',
@@ -71,6 +66,12 @@ bot.on('message', async (ctx) => {
             throw new Error('No text or photo found in the message.');
         }
 
+        if (!user.metadata) {
+            // assist user onboarding with telegram info
+            msgs.push({ role: 'user', content: `Data from telegram to assist onboarding: ${JSON.stringify(ctx.from)}. Do not assume timezone, please ask.` })
+        }
+
+        msgs.push(message);
         const result = await replyFromHistory(msgs, user);
 
         // Save user message and assistant response in a transaction
