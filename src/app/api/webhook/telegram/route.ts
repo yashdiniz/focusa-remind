@@ -27,7 +27,7 @@ bot.on('message', async (ctx) => {
         }
     }
     if (!ctx.message.text && !ctx.message.photo)
-        return await botSendMessage(bot, ctx.chatId.toString(), "⚠️ We currently only support text messages and photos. We are working to provide support for this!",
+        return await botSendMessage(bot, ctx.chatId.toString(), "⚠️ I currently only support text messages, sorry to keep you waiting!",
             ctx.message.message_id, interval);
     console.log(new Date(ctx.message.date * 1000).toISOString(), ctx.chatId, ctx.message.text ?? ctx.message.caption);
 
