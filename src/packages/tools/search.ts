@@ -12,7 +12,7 @@ const searchInternet = (user: User) => tool({
     execute: async ({ informationToGet: q }) => {
         try {
             const res = await fetch(`https://api.scrapingdog.com/google?api_key=${env.SCRAPINGDOG_API_KEY}&query=${encodeURIComponent(q)}&country=in&language=en`);
-            const data = await res.json();
+            const data: unknown = await res.json();
             console.log(`${user.platform}-${user.identifier}`, "search.internet tool called with query:", q, "response:", data);
             return data;
         } catch (e) {
