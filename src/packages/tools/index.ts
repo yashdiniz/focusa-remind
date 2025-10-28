@@ -2,6 +2,7 @@ import { type ToolSet } from "ai";
 import { type User } from "@/server/db/schema";
 import { userTools } from "./user";
 import { reminderTools } from "./reminder";
+import { searchTools } from "./search";
 import Supermemory from "supermemory";
 import { env } from "@/env";
 
@@ -19,5 +20,6 @@ export function tools(user: User): ToolSet {
     return {
         ...userTools(user, client),
         ...reminderTools(user, client),
+        ...searchTools(user),
     }
 }
