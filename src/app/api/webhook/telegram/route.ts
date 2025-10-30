@@ -13,6 +13,18 @@ import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
 const bot = new Bot(token);
+const webapp = env.WEBAPP_URL;
+if (!webapp) throw new Error('WEBAPP_URL is not set');
+
+bot.command('reminders', async (ctx) => {
+    await ctx.reply('View & manage reminders from here', {
+        reply_markup: {
+            inline_keyboard: [[
+                { text: "Reminders", url: new URL(`?chatId=${ctx.chatId}`, webapp).toString() }
+            ]]
+        }
+    });
+})
 
 bot.on('message', async (ctx) => {
     const interval = await botIsTyping(bot, ctx.chatId.toString());

@@ -20,6 +20,7 @@ export const env = createEnv({
     TELEGRAM_BOT_TOKEN: z.string(),
     SLACK_BOT_TOKEN: z.string(),
     SLACK_BOT_USER: z.string(),
+    WEBAPP_URL: z.url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -49,6 +50,7 @@ export const env = createEnv({
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
     SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
     SLACK_BOT_USER: process.env.SLACK_BOT_USER,
+    WEBAPP_URL: process.env.WEBAPP_URL,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**
