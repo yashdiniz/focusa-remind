@@ -7,15 +7,17 @@ import '@telegram-apps/telegram-ui/dist/styles.css';
 import { AppRoot, Cell, Section } from '@telegram-apps/telegram-ui';
 import { retrieveRawInitData } from '@tma.js/sdk-react';
 import { useEffect, useState } from 'react';
-import { getRemindersForSession } from './actions';
+import { getRemindersForSession, getSession } from './actions';
 import dayjs from 'dayjs';
 import { rrulestr } from 'rrule';
 
 export default function App() {
     const [reminders, setReminders] = useState<Awaited<ReturnType<typeof getRemindersForSession>>>([]);
+    const [session, setSession] = useState<string>('');
     useEffect(() => {
         try {
             const initData = retrieveRawInitData() ?? '';
+            setSession(JSON.stringify(getSession(initData)) ?? '');
             getRemindersForSession(initData).then(reminders => {
                 if (reminders) setReminders(reminders)
                 else setReminders([])
@@ -29,7 +31,7 @@ export default function App() {
 
     return (
         <AppRoot>
-            <Section header="Your Reminders" footer="No more reminders">
+            <Section header="Your Reminders" footer={session}>
                 {reminders!.map((reminder) => (
                     <Cell key={reminder.id}>
                         {`Title: ${reminder.title}

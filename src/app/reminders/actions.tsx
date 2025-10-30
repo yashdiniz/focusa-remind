@@ -5,7 +5,7 @@ import { validate, parse } from '@tma.js/init-data-node'
 
 type Session = ReturnType<typeof parse>;
 
-function getSession(authData: string): Session | null {
+export function getSession(authData: string): Session | null {
     try {
         validate(authData, env.TELEGRAM_BOT_TOKEN, {
             expiresIn: 600, // 10 minutes
