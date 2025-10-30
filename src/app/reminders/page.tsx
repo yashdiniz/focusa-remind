@@ -7,9 +7,12 @@ import { db } from '@/server/db';
 import dayjs from 'dayjs';
 import { rrulestr } from 'rrule';
 
-export default async function App({ params }: { params: { chatId: string } }) {
+export default async function App({ searchParams }: { searchParams: Promise<{ chatId: string }> }) {
+    const chatId = (await searchParams).chatId;
+    if (!chatId) return <div>No chatId provided</div>
+
     const user = await db.query.users.findFirst({
-        where: (users, { and, eq }) => and(eq(users.platform, 'telegram'), eq(users.identifier, params.chatId)),
+        where: (users, { and, eq }) => and(eq(users.platform, 'telegram'), eq(users.identifier, chatId)),
     }).execute();
     if (!user) return <div>Could not find user</div>
 
