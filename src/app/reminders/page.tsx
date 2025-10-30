@@ -5,7 +5,7 @@ import '@telegram-apps/telegram-ui/dist/styles.css';
 
 // Import components from the library
 import { AppRoot, Cell, Section } from '@telegram-apps/telegram-ui';
-import { retrieveRawInitData } from '@tma.js/sdk-react';
+import { init, retrieveRawInitData } from '@tma.js/sdk-react';
 import { useEffect, useState } from 'react';
 import { getRemindersForSession, getSession } from './actions';
 import dayjs from 'dayjs';
@@ -15,6 +15,7 @@ export default function App() {
     const [reminders, setReminders] = useState<Awaited<ReturnType<typeof getRemindersForSession>>>([]);
     const [session, setSession] = useState<string>('');
     useEffect(() => {
+        init()
         try {
             const initData = retrieveRawInitData() ?? '';
             setSession(JSON.stringify(getSession(initData)) ?? '');
