@@ -5,7 +5,7 @@ import { validate, parse } from '@tma.js/init-data-node'
 
 type Session = ReturnType<typeof parse>;
 
-export function getSession(authData: string): Session | null {
+export async function getSession(authData: string) {
     try {
         validate(authData, env.TELEGRAM_BOT_TOKEN, {
             expiresIn: 600, // 10 minutes
@@ -18,7 +18,7 @@ export function getSession(authData: string): Session | null {
 }
 
 async function getUserFromSession(authData: string) {
-    const session = getSession(authData)
+    const session: Session | null = await getSession(authData)
     if (!session || !session.chat) return null
     console.log('session', session)
 
