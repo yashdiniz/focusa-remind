@@ -13,13 +13,20 @@ import { validateSession } from './actions';
 const cellsTexts = ['Chat Settings', 'Data and Storage', 'Devices'];
 
 export default function App() {
-    const [authenticated, setAuthenticated] = useState(false);
+    const [authenticated, setAuthenticated] = useState<unknown>({});
     useEffect(() => {
-        const initData = retrieveRawInitData() ?? '';
-        validateSession(initData).then(setAuthenticated).catch(console.error);
+        try {
+            const initData = retrieveRawInitData() ?? '';
+            validateSession(initData).then(res => {
+                if (res) setAuthenticated(res);
+                else setAuthenticated(undefined);
+            }).catch(console.error);
+        } catch (e) {
+            console.error('Error during authentication:', e);
+        }
     }, []);
     if (!authenticated) {
-        return <div>Authenticating...</div>;
+        return <div>Are you opening this outside Telegram?</div>;
     }
 
     return (
