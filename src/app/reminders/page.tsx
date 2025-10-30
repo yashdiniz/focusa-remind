@@ -1,3 +1,5 @@
+'use client'
+
 // Import the necessary styles globally
 import '@telegram-apps/telegram-ui/dist/styles.css';
 
