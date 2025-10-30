@@ -1691,6 +1691,18 @@
     mitt "^3.0.1"
     valibot "^1.1.0"
 
+"@tma.js/init-data-node@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@tma.js/init-data-node/-/init-data-node-2.0.3.tgz#6562081d502605d58f72afcc0048711d14b5bd43"
+  integrity sha512-WUpltHfypbWjyYx8bR0hKxYkVNqVH6W58YSHcLiQ+gIq6DYthhaquWWJAa7dWXxZ95wCwVWFACon8pTYbE1mUA==
+  dependencies:
+    "@tma.js/toolkit" "^1.0.2"
+    "@tma.js/transformers" "^1.1.1"
+    "@tma.js/types" "^1.0.2"
+    better-promises "^1.0.0"
+    error-kid "^1.0.2"
+    fp-ts "^2.16.11"
+
 "@tma.js/sdk-react@^3.0.8":
   version "3.0.8"
   resolved "https://registry.yarnpkg.com/@tma.js/sdk-react/-/sdk-react-3.0.8.tgz#2669cf7e4c930981a960b7e43047c8b86c876374"
