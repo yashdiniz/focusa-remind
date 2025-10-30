@@ -4,45 +4,45 @@
 import '@telegram-apps/telegram-ui/dist/styles.css';
 
 // Import components from the library
-import { AppRoot, Cell, List, Section } from '@telegram-apps/telegram-ui';
+import { AppRoot, Cell, Section } from '@telegram-apps/telegram-ui';
 import { retrieveRawInitData } from '@tma.js/sdk-react';
 import { useEffect, useState } from 'react';
-import { validateSession } from './actions';
-
-// Example data for rendering list cells
-const cellsTexts = ['Chat Settings', 'Data and Storage', 'Devices'];
+import { getRemindersForSession } from './actions';
+import type { ReminderSelect } from '@/server/db/schema';
+import dayjs from 'dayjs';
+import { humanTime } from '@/packages/utils';
+import { rrulestr } from 'rrule';
 
 export default function App() {
-    const [authenticated, setAuthenticated] = useState<unknown>({});
+    const [reminders, setReminders] = useState<ReminderSelect[]>([]);
     useEffect(() => {
         try {
             const initData = retrieveRawInitData() ?? '';
-            validateSession(initData).then(res => {
-                if (res) setAuthenticated(res);
-                else setAuthenticated(undefined);
-            }).catch(console.error);
+            getRemindersForSession(initData).then(reminders => {
+                if (reminders) setReminders(reminders)
+            }).catch(e => {
+                throw e;
+            });
         } catch (e) {
             console.error('Error during authentication:', e);
         }
     }, []);
-    if (!authenticated) {
-        return <div>Are you opening this outside Telegram?</div>;
-    }
 
     return (
         <AppRoot>
-            {/* List component to display a collection of items */}
-            <List>
-                {/* Section component to group items within the list */}
-                <Section header="Header for the section" footer="Footer for the section">
-                    {/* Mapping through the cells data to render Cell components */}
-                    {cellsTexts.map((cellText, index) => (
-                        <Cell key={index}>
-                            {cellText}
-                        </Cell>
-                    ))}
-                </Section>
-            </List>
+            <Section header="Your Reminders" footer="No more reminders">
+                {reminders.map((reminder) => (
+                    <Cell key={reminder.id}>
+                        {`Title: ${reminder.title}
+Description: ${reminder.description}
+due: ${reminder.dueAt ? humanTime(reminder.dueAt) : ''}${dayjs(reminder.dueAt).format('YYYY-MM-DD HH:MM')}
+Deleted: ${reminder.deleted}
+sent: ${reminder.sent}
+priority: ${reminder.priority}
+rrule: ${reminder.rrule ? rrulestr(reminder.rrule).toText() : ''}${reminder.rrule}`}
+                    </Cell>
+                ))}
+            </Section>
         </AppRoot>
     )
 };
