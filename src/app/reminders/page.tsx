@@ -7,12 +7,13 @@ import { db } from '@/server/db';
 import dayjs from 'dayjs';
 import { rrulestr } from 'rrule';
 
-export default async function App({ searchParams }: { searchParams: Promise<{ chatId: string }> }) {
+export default async function App({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+    const platform = (await searchParams).platform as 'telegram' | 'slack';
     const chatId = (await searchParams).chatId;
-    if (!chatId) return <div>No chatId provided</div>
+    if (!chatId || !platform) return <div>No chatId provided</div>
 
     const user = await db.query.users.findFirst({
-        where: (users, { and, eq }) => and(eq(users.platform, 'telegram'), eq(users.identifier, chatId)),
+        where: (users, { and, eq }) => and(eq(users.platform, platform), eq(users.identifier, chatId)),
     }).execute();
     if (!user) return <div>Could not find user</div>
 
@@ -27,13 +28,13 @@ export default async function App({ searchParams }: { searchParams: Promise<{ ch
                 <Section header="Your Reminders" footer="End of Reminders">
                     {reminders.map((reminder) => (
                         <Cell key={reminder.id}>
-                            {`Title: ${reminder.title}
-Description: ${reminder.description}
-due: ${dayjs(reminder.dueAt).format('YYYY-MM-DD HH:MM')}
-Deleted: ${reminder.deleted}
-sent: ${reminder.sent}
-priority: ${reminder.priority}
-rrule: ${reminder.rrule ? rrulestr(reminder.rrule).toText() : ''}${reminder.rrule}`}
+                            Title: {reminder.title} <br />
+                            Description: {reminder.description} <br />
+                            due: {dayjs(reminder.dueAt).format('YYYY-MM-DD HH:MM')} <br />
+                            Deleted: {reminder.deleted} <br />
+                            sent: {reminder.sent} <br />
+                            priority: {reminder.priority} <br />
+                            rrule: ${reminder.rrule ? rrulestr(reminder.rrule).toText() : ''} {reminder.rrule} <br />
                         </Cell>
                     ))}
                 </Section>

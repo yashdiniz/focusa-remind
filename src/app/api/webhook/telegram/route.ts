@@ -20,7 +20,8 @@ bot.command('reminders', async (ctx) => {
     await ctx.reply('View & manage reminders from here', {
         reply_markup: {
             inline_keyboard: [[
-                { text: "Reminders", url: new URL(`?chatId=${ctx.chatId}`, webapp).toString() }
+                // TODO: secure the link with a JWT or unique token
+                { text: "Reminders", url: new URL(`?platform=telegram&chatId=${ctx.chatId}`, webapp).toString() }
             ]]
         }
     });
