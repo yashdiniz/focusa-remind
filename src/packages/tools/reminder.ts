@@ -145,7 +145,7 @@ const show = (user: User) => tool({
 
 const modify = (user: User) => tool({
     name: "reminder.modify",
-    description: "Modify existing reminder. Only non-null fields will be updated. To mark as sent/deleted, set the respective boolean to true",
+    description: "Modify existing reminder. Only non-null fields will be updated. To mark as sent/deleted, set the respective boolean to true. If bulk mutation, must set any one of ids or search, not both. In bulk mutation, cannot update title, description, dueDate, rrule or priority",
     inputSchema: z.object({
         isBulkMutation: z.boolean().describe("set if attempting bulk mutation"),
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional(),
