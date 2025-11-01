@@ -30,7 +30,7 @@ export default async function App({ searchParams }: { searchParams: Promise<Reco
                         <Cell key={reminder.id}>
                             Title: {reminder.title} <br />
                             Description: {reminder.description} <br />
-                            due: {dayjs(reminder.dueAt).format('YYYY-MM-DD HH:MM')} <br />
+                            due: {dayjs(reminder.dueAt).tz(user.metadata?.timezone ?? 'UTC').format('YYYY-MM-DD HH:mm')} <br />
                             Deleted: {reminder.deleted} <br />
                             sent: {reminder.sent} <br />
                             priority: {reminder.priority} <br />
