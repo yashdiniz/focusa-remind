@@ -139,7 +139,13 @@ const show = (user: User) => tool({
             }
         }).execute()
         console.log(`${user.platform}-${user.identifier}`, `reminder.show found ${reminders.length} reminders`);
-        return reminders;
+        return reminders.map(r => ({
+            id: r.id,
+            title: r.title, sent: r.sent, deleted: r.deleted, priority: r.priority,
+            ...(r.description ? { description: r.description } : undefined),
+            ...(r.dueAt ? { dueDate: dayjs(r.dueAt).tz(user.metadata?.timezone ?? 'UTC').format('YYYY-MM-DD HH:mm') } : undefined),
+            ...(r.rrule ? { rrule: r.rrule } : undefined),
+        }));
     },
 });
 
@@ -188,19 +194,19 @@ const modify = (user: User) => tool({
                 ...input.search.keywords.map(kw => or(ilike(reminders.title, `%${kw}%`), ilike(reminders.description, `%${kw}%`)))
             ) : undefined,
         )
-        if (input.dueDate)
-            await db.update(reminders).set({
-                title: input.title ?? undefined,
-                description: input.description ?? undefined,
-                priority: input.priority ?? undefined,
-                rrule: input.rrule ?? undefined,
-                dueAt: input.dueDate ? dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate() : undefined,
-            }).where(and(
-                eq(reminders.userId, user.id),
-                input.ids ? inArray(reminders.id, input.ids) : undefined,
-                input.search ? searchQuery : undefined,
-            ))
-        return true
+        return await db.update(reminders).set({
+            title: input.title ?? undefined,
+            description: input.description ?? undefined,
+            priority: input.priority ?? undefined,
+            rrule: input.rrule ?? undefined,
+            dueAt: input.dueDate ? dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate() : undefined,
+            sent: input.isSent ?? undefined,
+            deleted: input.isDeleted ?? undefined,
+        }).where(and(
+            eq(reminders.userId, user.id),
+            input.ids ? inArray(reminders.id, input.ids) : undefined,
+            input.search ? searchQuery : undefined,
+        )).execute()
     }
 });
 

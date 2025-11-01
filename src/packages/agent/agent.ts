@@ -35,7 +35,7 @@ export function agent(user: User, reminders: ReminderSelect[]): Agent<ToolSet, s
         system,
         stopWhen: [
             stepCountIs(10),
-            budgetExceeded(3000),
+            budgetExceeded(6000),
         ],
         tools: tools(user),
     })
