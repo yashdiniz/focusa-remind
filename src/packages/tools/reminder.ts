@@ -36,7 +36,7 @@ const RetrievalSchema = (user: User) => z.object({
     keywords: z.array(z.string()).describe("keywords to search in title/description. Optional").optional(),
     include_sent: z.boolean().describe("whether to include sent reminders").default(false),
     is_recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
-}).describe("leave empty or undefined to get all reminders").superRefine((o, ctx) => {
+}).describe("leave optional fields undefined unless necessary").superRefine((o, ctx) => {
     if (o.from && o.to && dayjs(o.from).isAfter(dayjs(o.to))) ctx.addIssue("from must be before to in search")
 })
 
@@ -111,7 +111,7 @@ const create = (user: User, client: Supermemory) => tool({
 
 const show = (user: User) => tool({
     name: "reminder.show",
-    description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. must set any one of ids or search, not both",
+    description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. must set any one of ids or search, not both. Leave both ids and search undefined to get all reminders",
     inputSchema: z.object({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs, prefer to leave empty or undfined unless required. Optional.").optional(),
         search: RetrievalSchema(user).optional(),
