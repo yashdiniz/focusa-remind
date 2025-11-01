@@ -3,7 +3,7 @@ import { tool } from "ai";
 import type { User } from "@/server/db/schema";
 import { env } from "@/env";
 
-const searchInternet = (user: User) => tool({
+const internet = (user: User) => tool({
     name: "search.internet",
     description: "Search the internet using Google. Run when explicitly asked or when searching for general information would be helpful.",
     inputSchema: z.object({
@@ -44,7 +44,7 @@ const searchInternet = (user: User) => tool({
 export function searchTools(user: User) {
     return {
         ...(user.metadata ? {
-            searchInternet: searchInternet(user),
+            "search.internet": internet(user),
             // searchYouTube: searchYouTube(user),
         } : undefined)
     }

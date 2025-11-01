@@ -116,8 +116,8 @@ export function userTools(user: User, client: Supermemory) {
         // add these only after onboarding
         ...(user.metadata ? {
             // "keepNote": keepNote(user),
-            "searchMemories": searchMemories(user, client),
-            "addMemory": addMemory(user, client),
+            searchMemories: searchMemories(user, client),
+            addMemory: addMemory(user, client),
         } : undefined),
     }
 }

@@ -34,7 +34,7 @@ export default async function App({ searchParams }: { searchParams: Promise<Reco
                             Deleted: {reminder.deleted} <br />
                             sent: {reminder.sent} <br />
                             priority: {reminder.priority} <br />
-                            rrule: ${reminder.rrule ? rrulestr(reminder.rrule).toText() : ''} {reminder.rrule} <br />
+                            rrule: {reminder.rrule ? rrulestr(reminder.rrule).toText() : ''} <br />
                         </Cell>
                     ))}
                 </Section>
