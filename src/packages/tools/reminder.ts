@@ -111,7 +111,7 @@ const create = (user: User, client: Supermemory) => tool({
 
 const show = (user: User) => tool({
     name: "reminder.show",
-    description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. Set either ids or search, not both",
+    description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. must set any one of ids or search, not both",
     inputSchema: z.object({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional(),
         search: RetrievalSchema(user).optional(),
