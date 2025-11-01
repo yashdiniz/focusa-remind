@@ -5,7 +5,11 @@ import '@telegram-apps/telegram-ui/dist/styles.css';
 import { AppRoot, Cell, Section, List } from '@telegram-apps/telegram-ui';
 import { db } from '@/server/db';
 import dayjs from 'dayjs';
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
 import { rrulestr } from 'rrule';
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default async function App({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
     const platform = (await searchParams).platform as 'telegram' | 'slack';
