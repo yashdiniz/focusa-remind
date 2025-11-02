@@ -34,11 +34,24 @@ const RetrievalSchema = (user: User) => z.object({
                 }
         }),
     keywords: z.array(z.string()).describe("keywords to search in title/description. Optional").optional(),
-    include_sent: z.boolean().describe("whether to include sent reminders").default(false),
-    is_recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
-}).describe("leave optional fields undefined unless necessary").superRefine((o, ctx) => {
+    includeCompleted: z.boolean().describe("whether to include completed reminders").default(false),
+    recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
+}).describe("only set necessary fields").superRefine((o, ctx) => {
     if (o.from && o.to && dayjs(o.from).isAfter(dayjs(o.to))) ctx.addIssue("from must be before to in search")
 })
+
+function searchQuery(user: User, input: unknown) {
+    const { from, to, includeCompleted, recurring, keywords } = RetrievalSchema(user).parse(input)
+    return and(
+        from ? gte(reminders.dueAt, dayjs.tz(from, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
+        to ? lte(reminders.dueAt, dayjs.tz(to, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
+        eq(reminders.sent, includeCompleted ?? false),
+        recurring ? isNotNull(reminders.rrule) : undefined,
+        keywords && keywords.length > 0 ? or(
+            ...keywords.map(kw => or(ilike(reminders.title, `%${kw}%`), ilike(reminders.description, `%${kw}%`)))
+        ) : undefined,
+    )
+}
 
 const create = (user: User, client: Supermemory) => tool({
     name: "reminder.create",
@@ -121,22 +134,11 @@ const show = (user: User) => tool({
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "reminder.show tool called with input:", input);
         const reminders = await db.query.reminders.findMany({
-            where: (reminders, { and, or, eq, gte, lte, ilike, inArray }) => {
-                const searchQuery = and(
-                    input.search?.from ? gte(reminders.dueAt, dayjs.tz(input.search.from, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
-                    input.search?.to ? lte(reminders.dueAt, dayjs.tz(input.search.from, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
-                    eq(reminders.sent, input.search?.include_sent ?? false),
-                    input.search?.is_recurring ? isNotNull(reminders.rrule) : undefined,
-                    input.search?.keywords && input.search.keywords.length > 0 ? or(
-                        ...input.search.keywords.map(kw => or(ilike(reminders.title, `%${kw}%`), ilike(reminders.description, `%${kw}%`)))
-                    ) : undefined,
-                )
-                return and(
-                    eq(reminders.userId, user.id),
-                    input.ids ? inArray(reminders.id, input.ids) : undefined,
-                    input.search ? searchQuery : undefined,
-                )
-            }
+            where: (reminders, { and, eq, inArray }) => and(
+                eq(reminders.userId, user.id),
+                input.ids ? inArray(reminders.id, input.ids) : undefined,
+                input.search ? searchQuery(user, input.search) : undefined,
+            )
         }).execute()
         console.log(`${user.platform}-${user.identifier}`, `reminder.show found ${reminders.length} reminders`);
         return reminders.map(r => ({
@@ -149,17 +151,16 @@ const show = (user: User) => tool({
     },
 });
 
-const modify = (user: User) => tool({
+const modifyOne = (user: User) => tool({
     name: "reminder.modify",
-    description: "Modify existing reminder. Only non-null fields will be updated. To mark as sent/deleted, set the respective boolean to true. If bulk mutation, must set any one of ids or search, not both. In bulk mutation, cannot update title, description, dueDate, rrule or priority",
+    description: "Modify existing reminder. Only set fields that need to be updated. To mark as completed/deleted, set the respective boolean to true",
     inputSchema: z.object({
-        isBulkMutation: z.boolean().describe("set if attempting bulk mutation"),
-        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional(),
-        search: RetrievalSchema(user).optional(),
-        isSent: z.boolean().describe("boolean to mark the reminder as completed").optional(),
-        isDeleted: z.boolean().describe("boolean to mark the reminder as deleted").optional(),
-        title: z.string().describe("Reminder title").optional(),
-        priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority").optional(),
+        id: z.uuidv7().describe("Reminder ID"),
+        type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder. Optional").optional(),
+        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional(),
+        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional(),
+        title: z.string().describe("Reminder title. Optional").optional(),
+        priority: z.enum(['low', 'medium', 'high']).describe("Reminder priority. Optional").optional(),
         rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional()
             .superRefine(validateRRule),
         dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Optional").optional()
@@ -174,39 +175,61 @@ const modify = (user: User) => tool({
             }),
         description: z.string().describe("Reminder description. Optional").optional(),
     }).superRefine((o, ctx) => {
-        if (!o.isBulkMutation) {
-            if (!o.ids) ctx.addIssue("must set ids since not bulk mutation")
-            if (o.ids?.length !== 1) ctx.addIssue("ids must contain exactly one ID when not bulk mutation")
-        }
-        if (o.isBulkMutation) {
-            if (o.title || o.description || o.dueDate || o.rrule || o.priority) ctx.addIssue("cannot set title, description, dueDate, rrule or priority in bulk mutation")
-            if (o.isSent == undefined && o.isDeleted == undefined) ctx.addIssue("mark any one of isSent or isDeleted in bulk mutation")
-            if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
+        if (o.type && (o.rrule || o.dueDate)) {
+            if (o.type === 'one-time' && o.rrule) ctx.addIssue({
+                code: 'custom',
+                message: 'dueDate required for one-time reminders',
+                path: ['dueDate', 'rrule'],
+            })
+            else if (o.type === 'recurring' && o.dueDate) ctx.addIssue({
+                code: 'custom',
+                message: 'rrule required for recurring reminders',
+                path: ['dueDate', 'rrule'],
+            })
         }
     }),
     async execute(input) {
-        const searchQuery = and(
-            input.search?.from ? gte(reminders.dueAt, dayjs.tz(input.search.from, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
-            input.search?.to ? lte(reminders.dueAt, dayjs.tz(input.search.from, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
-            eq(reminders.sent, input.search?.include_sent ?? false),
-            input.search?.is_recurring ? isNotNull(reminders.rrule) : undefined,
-            input.search?.keywords && input.search.keywords.length > 0 ? or(
-                ...input.search.keywords.map(kw => or(ilike(reminders.title, `%${kw}%`), ilike(reminders.description, `%${kw}%`)))
-            ) : undefined,
-        )
-        return await db.update(reminders).set({
+        console.log(`${user.platform}-${user.identifier}`, "reminder.modify tool called with input:", input);
+        const updated = await db.update(reminders).set({
             ...(input.title ? { title: input.title } : undefined),
             ...(input.description ? { description: input.description } : undefined),
             ...(input.priority ? { priority: input.priority } : undefined),
             ...(input.rrule ? { rrule: input.rrule } : undefined),
             dueAt: input.dueDate ? dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate() : undefined,
+            sent: input.completed ?? undefined,
+            deleted: input.deleted ?? undefined,
+        }).where(and(
+            eq(reminders.userId, user.id),
+            eq(reminders.id, input.id),
+        )).execute()
+        console.log(`${user.platform}-${user.identifier}`, `reminder.modify updated ${updated.toString()} reminder`);
+        return 'reminder has been updated'
+    }
+});
+
+const modifyBulk = (user: User) => tool({
+    name: "reminder.bulkModify",
+    description: "Mark multiple reminders as completed or deleted. Must set any one of ids or search, not both",
+    inputSchema: z.object({
+        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional(),
+        search: RetrievalSchema(user).optional(),
+        isSent: z.boolean().describe("Mark the reminder as completed. Optional").optional(),
+        isDeleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional(),
+    }).superRefine((o, ctx) => {
+        if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
+    }),
+    async execute(input) {
+        console.log(`${user.platform}-${user.identifier}`, "reminder.bulkModify tool called with input:", input);
+        const updated = await db.update(reminders).set({
             sent: input.isSent ?? undefined,
             deleted: input.isDeleted ?? undefined,
         }).where(and(
             eq(reminders.userId, user.id),
             input.ids ? inArray(reminders.id, input.ids) : undefined,
-            input.search ? searchQuery : undefined,
+            input.search ? searchQuery(user, input.search) : undefined,
         )).execute()
+        console.log(`${user.platform}-${user.identifier}`, `reminder.bulkModify updated ${updated.toString()} reminders`);
+        return 'reminders have been updated'
     }
 });
 
@@ -215,7 +238,8 @@ export function reminderTools(user: User, client: Supermemory) {
         ...(user.metadata ? {
             "reminder.create": create(user, client),
             "reminder.show": show(user),
-            "reminder.modify": modify(user),
+            "reminder.modify": modifyOne(user),
+            "reminder.bulkModify": modifyBulk(user),
         } : undefined),
     }
 }
