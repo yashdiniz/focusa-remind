@@ -195,10 +195,10 @@ const modify = (user: User) => tool({
             ) : undefined,
         )
         return await db.update(reminders).set({
-            title: input.title ?? undefined,
-            description: input.description ?? undefined,
-            priority: input.priority ?? undefined,
-            rrule: input.rrule ?? undefined,
+            ...(input.title ? { title: input.title } : undefined),
+            ...(input.description ? { description: input.description } : undefined),
+            ...(input.priority ? { priority: input.priority } : undefined),
+            ...(input.rrule ? { rrule: input.rrule } : undefined),
             dueAt: input.dueDate ? dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate() : undefined,
             sent: input.isSent ?? undefined,
             deleted: input.isDeleted ?? undefined,
