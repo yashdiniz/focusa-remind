@@ -13,7 +13,7 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 const RetrievalSchema = (user: User) => z.object({
-    from: z.string().describe("start datetime for the due date search in YYYY-MM-DD HH:MM. Optional").optional()
+    from: z.string().describe("start datetime for the due date search in YYYY-MM-DD HH:MM. Optional")
         .superRefine((z, ctx) => {
             if (z)
                 try {
@@ -23,7 +23,7 @@ const RetrievalSchema = (user: User) => z.object({
                     if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                 }
         }),
-    to: z.string().describe("end datetime for the due date search in YYYY-MM-DD HH:MM. Optional").optional()
+    to: z.string().describe("end datetime for the due date search in YYYY-MM-DD HH:MM. Optional")
         .superRefine((z, ctx) => {
             if (z)
                 try {
@@ -33,10 +33,10 @@ const RetrievalSchema = (user: User) => z.object({
                     if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                 }
         }),
-    keywords: z.array(z.string()).describe("keywords to search in title/description. Optional").optional(),
-    includeCompleted: z.boolean().describe("whether to include completed reminders").optional().default(false),
-    recurring: z.boolean().describe("whether to filter only recurring reminders").optional().default(false),
-}).superRefine((o, ctx) => {
+    keywords: z.array(z.string()).describe("keywords to search in title/description. Optional"),
+    includeCompleted: z.boolean().describe("whether to include completed reminders").default(false),
+    recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
+}).partial().superRefine((o, ctx) => {
     if (o.from && o.to && dayjs(o.from).isAfter(dayjs(o.to))) ctx.addIssue("from must be before to in search")
 })
 
@@ -126,9 +126,9 @@ const show = (user: User) => tool({
     name: "reminder.show",
     description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. Leave both ids and search undefined to get all reminders, else must set any one of ids or search, not both",
     inputSchema: z.object({
-        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional().nullable(),
-        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").optional().nullable(),
-    }).superRefine((o, ctx) => {
+        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").nullable(),
+        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").nullable(),
+    }).partial().superRefine((o, ctx) => {
         if (o.ids && o.search) ctx.addIssue("must set any one of ids or search, not both")
     }),
     async execute(input) {
@@ -211,11 +211,11 @@ const modifyBulk = (user: User) => tool({
     name: "reminder.bulkModify",
     description: "Mark multiple reminders as completed or deleted. Must set any one of ids or search, not both",
     inputSchema: z.object({
-        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional().nullable(),
-        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").optional().nullable(),
-        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional(),
-        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional(),
-    }).superRefine((o, ctx) => {
+        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").nullable(),
+        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").nullable(),
+        completed: z.boolean().describe("Mark the reminder as completed. Optional"),
+        deleted: z.boolean().describe("Mark the reminder as deleted. Optional"),
+    }).partial().superRefine((o, ctx) => {
         if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
     }),
     async execute(input) {
