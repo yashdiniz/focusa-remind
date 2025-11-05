@@ -36,7 +36,7 @@ const RetrievalSchema = (user: User) => z.object({
     keywords: z.array(z.string()).describe("keywords to search in title/description. Optional").optional(),
     includeCompleted: z.boolean().describe("whether to include completed reminders").default(false),
     recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
-}).describe("only set necessary fields").superRefine((o, ctx) => {
+}).superRefine((o, ctx) => {
     if (o.from && o.to && dayjs(o.from).isAfter(dayjs(o.to))) ctx.addIssue("from must be before to in search")
 })
 
@@ -124,10 +124,10 @@ const create = (user: User, client: Supermemory) => tool({
 
 const show = (user: User) => tool({
     name: "reminder.show",
-    description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. must set any one of ids or search, not both. Leave both ids and search undefined to get all reminders",
+    description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. Leave both ids and search undefined to get all reminders, else must set any one of ids or search, not both",
     inputSchema: z.object({
-        ids: z.array(z.uuidv7()).describe("list of reminder IDs, prefer to leave empty or undfined unless required. Optional.").optional(),
-        search: RetrievalSchema(user).optional(),
+        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional(),
+        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").optional(),
     }).superRefine((o, ctx) => {
         if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
     }),
@@ -212,17 +212,17 @@ const modifyBulk = (user: User) => tool({
     description: "Mark multiple reminders as completed or deleted. Must set any one of ids or search, not both",
     inputSchema: z.object({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional(),
-        search: RetrievalSchema(user).optional(),
-        isSent: z.boolean().describe("Mark the reminder as completed. Optional").optional(),
-        isDeleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional(),
+        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").optional(),
+        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional(),
+        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional(),
     }).superRefine((o, ctx) => {
         if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
     }),
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "reminder.bulkModify tool called with input:", input);
         const updated = await db.update(reminders).set({
-            sent: input.isSent ?? undefined,
-            deleted: input.isDeleted ?? undefined,
+            sent: input.completed ?? undefined,
+            deleted: input.deleted ?? undefined,
         }).where(and(
             eq(reminders.userId, user.id),
             input.ids ? inArray(reminders.id, input.ids) : undefined,
