@@ -41,7 +41,7 @@ export function validateTimezone(tz: string) {
  * @param rrule rrule string to validate
  * @returns boolean indicating if the rrule is valid
  */
-export function validateRRule(rrule: string | undefined, ctx: z.core.$RefinementCtx<string | undefined>): void {
+export function validateRRule(rrule: string | null | undefined, ctx: z.core.$RefinementCtx<string | null | undefined>): void {
     if (rrule) {
         try {
             const r = RRule.fromString(rrule)

@@ -156,14 +156,14 @@ const modifyOne = (user: User) => tool({
     description: "Modify existing reminder. Only set fields that need to be updated. To mark as completed/deleted, set the respective boolean to true",
     inputSchema: z.object({
         id: z.uuidv7().describe("Reminder ID"),
-        type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder. Optional").optional(),
-        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional(),
-        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional(),
-        title: z.string().describe("Reminder title. Optional").optional(),
-        priority: z.enum(['low', 'medium', 'high']).describe("Reminder priority. Optional").optional(),
-        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional()
+        type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder. Optional").optional().nullable(),
+        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional().nullable(),
+        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional().nullable(),
+        title: z.string().describe("Reminder title. Optional").optional().nullable(),
+        priority: z.enum(['low', 'medium', 'high']).describe("Reminder priority. Optional").optional().nullable(),
+        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional().nullable()
             .superRefine(validateRRule),
-        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Optional").optional()
+        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Optional").optional().nullable()
             .superRefine((z, ctx) => {
                 if (z)
                     try {
@@ -173,7 +173,7 @@ const modifyOne = (user: User) => tool({
                         if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                     }
             }),
-        description: z.string().describe("Reminder description. Optional").optional(),
+        description: z.string().describe("Reminder description. Optional").optional().nullable(),
     }).superRefine((o, ctx) => {
         if (o.type && (o.rrule || o.dueDate)) {
             if (o.type === 'one-time' && o.rrule) ctx.addIssue({
