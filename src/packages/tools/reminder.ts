@@ -34,8 +34,8 @@ const RetrievalSchema = (user: User) => z.object({
                 }
         }),
     keywords: z.array(z.string()).describe("keywords to search in title/description. Optional").optional(),
-    includeCompleted: z.boolean().describe("whether to include completed reminders").default(false),
-    recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
+    includeCompleted: z.boolean().describe("whether to include completed reminders").optional().default(false),
+    recurring: z.boolean().describe("whether to filter only recurring reminders").optional().default(false),
 }).superRefine((o, ctx) => {
     if (o.from && o.to && dayjs(o.from).isAfter(dayjs(o.to))) ctx.addIssue("from must be before to in search")
 })
