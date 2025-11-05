@@ -6,6 +6,8 @@ import { db } from '@/server/db';
 import { union } from 'drizzle-orm/pg-core';
 import { and, asc, desc, eq, not } from 'drizzle-orm';
 import { experimental_transcribe as transcribe } from 'ai';
+import { embedMany } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -85,4 +87,23 @@ export async function transcribeAudio(url: URL): Promise<string> {
     });
     console.log('lang:', transcript.language, 'Transcription result:', transcript.text);
     return transcript.text;
+}
+
+/**
+ * Embeds the text array using gemini's embedding model.
+ * @param texts
+ */
+export async function embedInputs(values: string[], dims = 128) {
+    const model = google.textEmbeddingModel('gemini-embedding-001')
+
+    return await embedMany({
+        model,
+        values,
+        providerOptions: {
+            google: {
+                outputDimensionality: dims,
+                taskType: 'RETRIEVAL_QUERY',
+            }
+        }
+    })
 }

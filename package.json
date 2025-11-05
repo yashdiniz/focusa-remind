@@ -22,6 +22,7 @@
     "test": "npm run test:jest"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.27",
     "@ai-sdk/groq": "^2.0.18",
     "@auth/drizzle-adapter": "^1.7.2",
     "@modelcontextprotocol/sdk": "^1.18.0",
