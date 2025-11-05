@@ -129,7 +129,7 @@ const show = (user: User) => tool({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").optional().nullable(),
         search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").optional().nullable(),
     }).superRefine((o, ctx) => {
-        if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
+        if (o.ids && o.search) ctx.addIssue("must set any one of ids or search, not both")
     }),
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "reminder.show tool called with input:", input);
