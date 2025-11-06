@@ -213,8 +213,8 @@ const modifyBulk = (user: User) => tool({
     inputSchema: z.object({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").nullable(),
         search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").nullable(),
-        completed: z.boolean().describe("Mark the reminder as completed. Optional"),
-        deleted: z.boolean().describe("Mark the reminder as deleted. Optional"),
+        completed: z.boolean().describe("Mark the reminder as completed. Optional").nullable(),
+        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").nullable(),
     }).partial().superRefine((o, ctx) => {
         if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
     }),
