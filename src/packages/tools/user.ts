@@ -46,7 +46,6 @@ const upsert = (user: User) => tool({
             metadata: {
                 ...user.metadata,
                 ...input, // overwrite inputs
-                summary: user.metadata?.summary ?? 'Empty summary', // preserve existing summary if any
             }
         }).where(eq(users.id, user.id)).execute();
         console.log(`${user.platform}-${user.identifier}`, "userInfo updated");

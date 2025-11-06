@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
                 name: 'Test User',
                 language: 'English',
                 timezone: 'Asia/Kolkata',
-                summary: 'A test user who is learning Chess and Japanese and interested in technology and science.',
+                // summary: 'A test user who is learning Chess and Japanese and interested in technology and science.',
             }
         })
         return new Response(JSON.stringify(result.response.messages), {

@@ -53,23 +53,23 @@ export const FIRST_INTERACTION_PROMPT = `
  * @param reminders Recently added reminders by the user.
  * @returns summary prompt string.
  */
-export async function generateSummaryPrompt(user: User, summary: string, reminders: ReminderSelect[]) {
-  // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
-  const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, avoid pronouns, concise and meaningful. Keep all existing information unless contradicted/flagged for removal.
-Exclude: one-off reminders, trivia, fleeting events, sensitive data.
-Include: occupation, hobbies, recurring goals, priorities, stable personal facts (relevant for months+), and context relevant for future responses.
-Preserve essential context avoid extra prose and filler; do not assume any extra details.
----
-[[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
-[[new: ${summary}]]
-${reminderListToString(user, reminders)}
-`;
+// export async function generateSummaryPrompt(user: User, summary: string, reminders: ReminderSelect[]) {
+//   // NOTE: preferably store this in the database as well and update it periodically, to reduce token usage.
+//   const prompt = `Merge user's previous summary, reminders and new summary. Keep it one-line, avoid pronouns, concise and meaningful. Keep all existing information unless contradicted/flagged for removal.
+// Exclude: one-off reminders, trivia, fleeting events, sensitive data.
+// Include: occupation, hobbies, recurring goals, priorities, stable personal facts (relevant for months+), and context relevant for future responses.
+// Preserve essential context avoid extra prose and filler; do not assume any extra details.
+// ---
+// [[previous: ${user.metadata?.summary ?? 'Empty summary'}]]
+// [[new: ${summary}]]
+// ${reminderListToString(user, reminders)}
+// `;
 
-  return await generateText({
-    model: groq("llama-3.1-8b-instant"), maxOutputTokens: 250,
-    prompt,
-  }).then(res => res.text);
-}
+//   return await generateText({
+//     model: groq("llama-3.1-8b-instant"), maxOutputTokens: 250,
+//     prompt,
+//   }).then(res => res.text);
+// }
 
 export const ACCOUNTABILITY_CHECKIN_PROMPT = `You're a friendly accountability buddy, and you missed to remind the user! Be supportive and friendly. Use the title, description and trigger to form a coherent sentence. Set the important details in **bold**. If the reminder is early, start with 'Heads Up!'`;
 

@@ -25,7 +25,6 @@ interface UserMetadata {
   name: string;
   language: string;
   timezone: string;
-  summary: string; // summary of user's goals and priorities
 }
 
 export const users = createTable("user", d => ({

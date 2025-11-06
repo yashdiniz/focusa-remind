@@ -209,7 +209,7 @@ const modifyOne = (user: User) => tool({
 
 const modifyBulk = (user: User) => tool({
     name: "reminder.bulkModify",
-    description: "Mark multiple reminders as completed or deleted. Must set any one of ids or search, not both",
+    description: "Mark multiple reminders as completed or deleted. Must set any one of ids or search, not both, even when deleting all reminders",
     inputSchema: z.object({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").nullable(),
         search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").nullable(),
