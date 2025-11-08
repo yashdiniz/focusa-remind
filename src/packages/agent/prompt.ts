@@ -1,7 +1,7 @@
-import type { ReminderSelect, User } from "@/server/db/schema";
-import { groq } from "@ai-sdk/groq";
-import { generateText } from "ai";
-import { reminderListToString } from "../utils";
+// import type { ReminderSelect, User } from "@/server/db/schema";
+// import { groq } from "@ai-sdk/groq";
+// import { generateText } from "ai";
+// import { reminderListToString } from "../utils";
 
 /*
 === NOTE ===
@@ -78,6 +78,4 @@ export const ACCOUNTABILITY_CHECKIN_PROMPT = `You're a friendly accountability b
  * @param directives Additional behavioral directives to include in the system prompt.
  * @returns system prompt string.
  */
-export const generateSystemPrompt = (directives?: string[]) => `${preamble}
----
-${directives ? directives.join('\n---\n') : ''}`;
+export const generateSystemPrompt = (directives?: string[]) => `${preamble}${directives?.join('\n') ?? ''}`;
