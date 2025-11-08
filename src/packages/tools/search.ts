@@ -2,6 +2,7 @@ import { z } from "zod";
 import { tool } from "ai";
 import type { User } from "@/server/db/schema";
 import { env } from "@/env";
+import { encode } from "@toon-format/toon";
 
 const internet = (user: User) => tool({
     name: "search.internet",
@@ -14,10 +15,15 @@ const internet = (user: User) => tool({
             const res = await fetch(`https://api.scrapingdog.com/google?api_key=${env.SCRAPINGDOG_API_KEY}&query=${encodeURIComponent(q)}&country=in&language=en`);
             const data: unknown = await res.json();
             console.log(`${user.platform}-${user.identifier}`, "search.internet tool called with query:", q, "response:", data);
-            return data;
+            return encode(data, {
+                delimiter: '|',
+            });
         } catch (e) {
             console.error("Error in search.internet tool:", e);
-            return "Error occurred while searching the internet.";
+            return encode({
+                success: false,
+                error: 'internet search failed',
+            })
         }
     }
 })
@@ -31,12 +37,17 @@ const internet = (user: User) => tool({
 //     execute: async ({ videoToSearch: q }) => {
 //         try {
 //             const res = await fetch(`https://api.scrapingdog.com/youtube?api_key=${env.SCRAPINGDOG_API_KEY}&query=${encodeURIComponent(q)}&country=in&language=en`);
-//             const data = await res.json();
+//             const data: unknown = await res.json();
 //             console.log(`${user.platform}-${user.identifier}`, "search.youtube tool called with query:", q, "response:", data);
-//             return data;
+//             return encode(data, {
+//                 delimiter: '|',
+//             });
 //         } catch (e) {
 //             console.error("Error in search.youtube tool:", e);
-//             return "Error occurred while searching YouTube.";
+//             return encode({
+//                 success: false,
+//                 error: 'youtube search failed',
+//             })
 //         }
 //     }
 // })

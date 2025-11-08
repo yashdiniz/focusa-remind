@@ -5,6 +5,7 @@ import { z } from "zod";
 import { tool } from "ai";
 import { /*updateBio,*/ validateTimezone } from "../utils";
 import type Supermemory from "supermemory";
+import { encode } from "@toon-format/toon";
 
 // const keepNote = (user: User) => tool({
 //     name: "keepNote",
@@ -17,9 +18,10 @@ import type Supermemory from "supermemory";
 //         if (user.metadata) {
 //             const summary = await updateBio(user, input.summary)
 //             console.log(`${user.platform}-${user.identifier}`, "bio call occured", summary);
-//         } else return {
-//             error: "Cannot update bio without onboarding"
-//         }
+//         } else return encode({
+//             success: false,
+//             error: "Cannot update bio without onboarding",
+//         })
 //     },
 // });
 
@@ -37,9 +39,10 @@ const upsert = (user: User) => tool({
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "userInfo tool called with input:", input);
         if (input.name.toLowerCase().includes('focusa')) {
-            return {
+            return encode({
+                success: false,
                 error: "Your name is FOCUSA Remind, user's name cannot be FOCUSA. Proceed with onboarding",
-            }
+            })
         }
 
         await db.update(users).set({
@@ -49,7 +52,7 @@ const upsert = (user: User) => tool({
             }
         }).where(eq(users.id, user.id)).execute();
         console.log(`${user.platform}-${user.identifier}`, "userInfo updated");
-        return { success: true };
+        return encode({ success: true });
     }
 });
 
@@ -65,16 +68,16 @@ const searchMemories = (user: User, client: Supermemory) => tool({
                 containerTags: [`user_${user.platform}-${user.identifier}`],
             })
 
-            return {
+            return encode({
                 success: true,
                 results: response.results,
                 count: response.results?.length || 0,
-            }
+            })
         } catch (error) {
-            return {
+            return encode({
                 success: false,
                 error: error instanceof Error ? error.message : "Unknown error",
-            }
+            })
         }
     },
 })
@@ -96,15 +99,15 @@ const addMemory = (user: User, client: Supermemory) => tool({
                 ...(Object.keys(metadata).length > 0 && { metadata }),
             })
 
-            return {
+            return encode({
                 success: true,
                 memory: response,
-            }
+            })
         } catch (error) {
-            return {
+            return encode({
                 success: false,
                 error: error instanceof Error ? error.message : "Unknown error",
-            }
+            })
         }
     },
 })

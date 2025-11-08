@@ -1770,6 +1770,11 @@
   resolved "https://registry.yarnpkg.com/@tma.js/types/-/types-1.0.2.tgz#522305fae7a4d5753058f506cbf06c929d858917"
   integrity sha512-qs4mi+U1xZmMQBdMhWAo1X4YqUJ/ae0y28s+GNCpQq58bsJo0h8rvyVOB1RwPvXogIY9+yribbZe6z3AIJmsAQ==
 
+"@toon-format/toon@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/@toon-format/toon/-/toon-0.8.0.tgz#bc37a5da937dd188456d7cd22e3ed81d39e7462a"
+  integrity sha512-w8o61UiKRDyTDFh05V9k87jCpa6DBmdBSHm9B1vXS3ynSfhvCKF7wn9IaMfglrfs6ARiaqIcCgBIdYbJETwVxQ==
+
 "@trpc/client@^11.0.0":
   version "11.5.0"
   resolved "https://registry.yarnpkg.com/@trpc/client/-/client-11.5.0.tgz#2bf991599b9c93e0d8f2c7a033d57bafe94352a4"

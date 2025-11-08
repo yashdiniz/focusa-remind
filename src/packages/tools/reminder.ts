@@ -9,6 +9,7 @@ import timezone from "dayjs/plugin/timezone"
 import { db } from "@/server/db";
 import type Supermemory from "supermemory";
 import { and, eq, gte, ilike, inArray, isNotNull, lte, or } from "drizzle-orm";
+import { encode } from '@toon-format/toon';
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
@@ -18,7 +19,7 @@ const RetrievalSchema = (user: User) => z.object({
             if (z)
                 try {
                     if (dayjs.tz(z, user.metadata?.timezone ?? 'UTC').tz('UTC').isAfter(dayjs()))
-                        ctx.addIssue('error: must be past date')
+                        ctx.addIssue('must be past date')
                 } catch (e) {
                     if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                 }
@@ -28,7 +29,7 @@ const RetrievalSchema = (user: User) => z.object({
             if (z)
                 try {
                     if (dayjs.tz(z, user.metadata?.timezone ?? 'UTC').tz('UTC').isAfter(dayjs()))
-                        ctx.addIssue('error: must be past date')
+                        ctx.addIssue('must be past date')
                 } catch (e) {
                     if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                 }
@@ -67,7 +68,7 @@ const create = (user: User, client: Supermemory) => tool({
                 if (z)
                     try {
                         if (dayjs.tz(z, user.metadata?.timezone ?? 'UTC').tz('UTC').isBefore(dayjs()))
-                            ctx.addIssue('error: must be future date, ask user to set a few hours ahead')
+                            ctx.addIssue('must be future date, ask user to set a few hours ahead')
                     } catch (e) {
                         if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                     }
@@ -116,9 +117,12 @@ const create = (user: User, client: Supermemory) => tool({
             })
             // await updateBio(user, '')
             console.log(`${user.platform}-${user.identifier}`, "reminder.create occured", reminder[0]);
-            return { id: reminder[0].id, repeats: rem.repeats, setAt: rem.dueAt }
+            return encode({ id: reminder[0].id, repeats: rem.repeats, setAt: rem.dueAt })
         }
-        throw new Error('Could not create reminder!')
+        return encode({
+            success: false,
+            error: 'could not create reminder'
+        })
     },
 });
 
@@ -141,13 +145,13 @@ const show = (user: User) => tool({
             )
         }).execute()
         console.log(`${user.platform}-${user.identifier}`, `reminder.show found ${reminders.length} reminders`);
-        return reminders.map(r => ({
+        return encode(reminders.map(r => ({
             id: r.id,
             title: r.title, sent: r.sent, deleted: r.deleted, priority: r.priority,
             ...(r.description ? { description: r.description } : undefined),
             ...(r.dueAt ? { dueDate: dayjs(r.dueAt).tz(user.metadata?.timezone ?? 'UTC').format('YYYY-MM-DD HH:mm') } : undefined),
             ...(r.rrule ? { rrule: r.rrule } : undefined),
-        }));
+        })));
     },
 });
 
@@ -203,7 +207,7 @@ const modifyOne = (user: User) => tool({
             eq(reminders.id, input.id),
         )).execute()
         console.log(`${user.platform}-${user.identifier}`, `reminder.modify updated ${updated.toString()} reminder`);
-        return 'reminder has been updated'
+        return encode({ success: true })
     }
 });
 
@@ -229,7 +233,7 @@ const modifyBulk = (user: User) => tool({
             input.search ? searchQuery(user, input.search) : undefined,
         )).execute()
         console.log(`${user.platform}-${user.identifier}`, `reminder.bulkModify updated ${updated.toString()} reminders`);
-        return 'reminders have been updated'
+        return encode({ success: true })
     }
 });
 
