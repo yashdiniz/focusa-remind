@@ -93,7 +93,7 @@ export async function transcribeAudio(url: URL): Promise<string> {
  * Embeds the text array using gemini's embedding model.
  * @param texts
  */
-export async function embedInputs(values: string[], dims = 128) {
+export async function embedInputs(values: string[], dims = 768) {
     const model = google.textEmbeddingModel('gemini-embedding-001')
 
     return await embedMany({
@@ -102,7 +102,7 @@ export async function embedInputs(values: string[], dims = 128) {
         providerOptions: {
             google: {
                 outputDimensionality: dims,
-                taskType: 'RETRIEVAL_QUERY',
+                taskType: 'QUESTION_ANSWERING',
             }
         }
     })

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    const { embeddings, usage, values } = await embedInputs(res.data)
+    const { embeddings, usage, values } = await embedInputs(res.data, 768)
 
     console.log('tokens:', usage.tokens)
     for (let i = 0; i < embeddings.length; i++) {
