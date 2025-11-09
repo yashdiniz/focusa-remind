@@ -10,6 +10,7 @@ import { delay, type UserModelMessage } from '@ai-sdk/provider-utils';
 import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { encode } from '@toon-format/toon';
+import { updateMemoryAgent } from '@/packages/memory';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
@@ -102,6 +103,16 @@ bot.on('message', async (ctx) => {
             }
             if (!result.text.trim()) await botSendMessage(bot, ctx.chatId.toString(), "ℹ️ bot replied with empty text", ctx.message.message_id, interval)
             else await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(), ctx.message.message_id, interval)
+            const agent = updateMemoryAgent(user)
+            const res = await agent.generate({
+                messages: msgs,
+                providerOptions: {
+                    groq: {
+                        user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
+                    }
+                }
+            })
+            console.log('telegram webhook updateMemoryAgent:', res.content)
         })());
     } catch (e) {
         console.error('Error processing message:', e);

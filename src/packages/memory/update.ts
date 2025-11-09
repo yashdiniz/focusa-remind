@@ -28,7 +28,7 @@ Strictly reply with a summary of your actions (less than 10 words)
 SUMMARY:
 `
 
-export async function updateMemoryAgent(user: User) {
+export function updateMemoryAgent(user: User) {
     const addMemory = tool({
         name: 'add',
         description: 'add a new memories into the database',

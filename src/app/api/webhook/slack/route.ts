@@ -3,6 +3,7 @@ export const fetchCache = 'force-no-store';
 
 import { env } from '@/env';
 import { replyFromHistory } from '@/packages/ai';
+import { updateMemoryAgent } from '@/packages/memory';
 import { botSendMessage } from '@/packages/slack';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { WebClient } from '@slack/web-api';
@@ -100,6 +101,16 @@ export async function POST(req: NextRequest) {
         waitUntil((async () => {
             if (!result.text.trim()) await botSendMessage(bot, body.data.event.channel, "ℹ️ _bot replied with empty text_")
             else await botSendMessage(bot, body.data.event.channel, result.text.trim())
+            const agent = updateMemoryAgent(user)
+            const res = await agent.generate({
+                messages: msgs,
+                providerOptions: {
+                    groq: {
+                        user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
+                    }
+                }
+            })
+            console.log('telegram webhook updateMemoryAgent:', res.content)
         })())
     } catch (e) {
         console.error('Error processing message:', e)
