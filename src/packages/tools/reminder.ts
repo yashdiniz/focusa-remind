@@ -1,13 +1,12 @@
 import { z } from "zod";
 import { tool } from "ai";
 import { reminders, type ReminderInsert, type User } from "@/server/db/schema";
-import { humanTime, reminderListToString, /*updateBio,*/ validateRRule } from "../utils";
+import { humanTime, /*reminderListToString, updateBio,*/ validateRRule } from "../utils";
 import { RRule } from "rrule";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
 import { db } from "@/server/db";
-import type Supermemory from "supermemory";
 import { and, eq, gte, ilike, inArray, isNotNull, lte, or } from "drizzle-orm";
 import { encode } from '@toon-format/toon';
 dayjs.extend(utc)
@@ -54,7 +53,7 @@ function searchQuery(user: User, input: unknown) {
     )
 }
 
-const create = (user: User, client: Supermemory) => tool({
+const create = (user: User) => tool({
     name: "reminder.create",
     description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. If no time provided, assume user means a few hours ahead. Share output of `repeats` with user to confirm",
     inputSchema: z.object({
@@ -111,10 +110,10 @@ const create = (user: User, client: Supermemory) => tool({
         }
         const reminder = await db.insert(reminders).values(rem).returning().execute()
         if (reminder && reminder.length === 1 && reminder[0]?.id) {
-            if (input.type === 'recurring') await client.memories.add({
-                content: `User added a new reminder: ${reminderListToString(user, reminder)}`,
-                containerTag: `user_${user.platform}-${user.identifier}`,
-            })
+            // if (input.type === 'recurring') await client.memories.add({
+            //     content: `User added a new reminder: ${reminderListToString(user, reminder)}`,
+            //     containerTag: `user_${user.platform}-${user.identifier}`,
+            // })
             // await updateBio(user, '')
             console.log(`${user.platform}-${user.identifier}`, "reminder.create occured", reminder[0]);
             return encode({ id: reminder[0].id, repeats: rem.repeats, setAt: rem.dueAt })
@@ -237,10 +236,10 @@ const modifyBulk = (user: User) => tool({
     }
 });
 
-export function reminderTools(user: User, client: Supermemory) {
+export function reminderTools(user: User) {
     return {
         ...(user.metadata ? {
-            "reminder.create": create(user, client),
+            "reminder.create": create(user),
             "reminder.show": show(user),
             "reminder.modify": modifyOne(user),
             "reminder.bulkModify": modifyBulk(user),

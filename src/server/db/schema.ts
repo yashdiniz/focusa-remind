@@ -1,6 +1,6 @@
 import type { AssistantModelMessage, ToolModelMessage, UserModelMessage } from "ai";
 import { relations, sql } from "drizzle-orm";
-import { index, pgTableCreator, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, index, pgTableCreator, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { uuidv7 } from "uuidv7";
 
 /**
@@ -79,6 +79,40 @@ export const reminderRelations = relations(reminders, ({ one }) => ({
 
 export type ReminderSelect = typeof reminders.$inferSelect;
 export type ReminderInsert = typeof reminders.$inferInsert;
+
+// export const reminderHistory = createTable("reminder_history", d => ({
+//   ...idMixin,
+//   // NOTE: fine with foreign key since we are soft deleting anyway
+//   reminderId: d.uuid("reminder_id").notNull().references(() => reminders.id, { onDelete: 'cascade' }),
+//   previousValue: d.jsonb("previous").$type<ReminderSelect>().notNull(),
+//   currentValue: d.jsonb("current").$type<ReminderInsert>().notNull(),
+//   action: d.text("action", { enum: ['create', 'modifyOne', 'modifyBulk'] }).notNull(),
+//   ...createdAtMixin, ...updatedAtMixin,
+// }))
+
+// export const reminderHistoryRelations = relations(reminderHistory, ({ one }) => ({
+//   reminder: one(reminders, { fields: [reminderHistory.reminderId], references: [reminders.id] }),
+// }))
+
+interface MemoryMetadata {
+  categories: string[];
+}
+
+export const memories = createTable("memory", d => ({
+  ...idMixin,
+  userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  parentId: d.uuid("parent_id"),
+  edgeType: d.text({ enum: ['extend', 'replace'] }),
+  fact: d.text("fact").notNull(),
+  embedding: d.halfvec("embedding", { dimensions: 768 }).notNull(),
+  metadata: d.jsonb("metadata").$type<MemoryMetadata>().notNull(),
+  deleted: d.boolean("deleted").notNull().default(false), // basically completed flag
+  ...createdAtMixin,
+}), t => [
+  // index("memory_user_id_idx").on(t.userId),
+  foreignKey({ name: "memory_parent_id_fk_idx", columns: [t.parentId], foreignColumns: [t.id] }),
+  index("memory_embedding_idx").using('hnsw', t.embedding.op('vector_cosine_ops')),
+])
 
 // import { type AdapterAccount } from "next-auth/adapters";
 // export const accounts = createTable(

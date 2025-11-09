@@ -27,7 +27,7 @@ export async function extractMemories(messages: Array<ModelMessage>, user: User)
         messages,
         schema: z.object({
             noInfo: z.boolean().describe('set true if no info to be extracted'),
-            info: z.array(z.string()).describe('list of memories'),
+            info: z.array(z.string()).describe('list of memories').optional(),
         }),
         providerOptions: {
             groq: {

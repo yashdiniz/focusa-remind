@@ -1,5 +1,5 @@
 import { env } from "@/env";
-import { extractMemories } from "@/packages/memory/extract";
+import { updateMemoryAgent } from "@/packages/memory/update";
 import { assistantModelMessageSchema, toolModelMessageSchema, userModelMessageSchema } from "ai";
 import type { NextRequest } from "next/server";
 import z from "zod";
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const result = await extractMemories(res.data, {
+        const agent = await updateMemoryAgent({
             id: 'test-user-id',
             platform: 'telegram',
             identifier: 'test-identifier',
@@ -38,7 +38,16 @@ export async function POST(req: NextRequest) {
                 // summary: 'A test user who is learning Chess and Japanese and interested in technology and science.',
             }
         })
-        return new Response(JSON.stringify(result), {
+        const result = await agent.generate({
+            messages: res.data,
+            providerOptions: {
+                groq: {
+                    user: `testmemory`,
+                }
+            }
+        })
+        console.log('tokens used', result.usage)
+        return new Response(JSON.stringify(result.response.messages), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',

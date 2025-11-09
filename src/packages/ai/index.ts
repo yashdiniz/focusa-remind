@@ -8,6 +8,8 @@ import { and, asc, desc, eq, not } from 'drizzle-orm';
 import { experimental_transcribe as transcribe } from 'ai';
 import { embedMany } from 'ai';
 import { google } from '@ai-sdk/google';
+import { searchMemories } from '../memory';
+import { uuidv7 } from 'uuidv7';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -63,6 +65,21 @@ export async function replyFromHistory(messages: (UserModelMessage | AssistantMo
             eq(reminders.priority, 'low'),
         )).orderBy(asc(reminders.dueAt), desc(reminders.createdAt)).limit(5),
     ).execute()
+    // add searchMemories result at the top of conversation history
+    messages.unshift({
+        role: 'tool',
+        content: [
+            {
+                type: 'tool-result',
+                toolCallId: uuidv7(),
+                toolName: 'searchMemories',
+                output: {
+                    type: 'text',
+                    value: await searchMemories(messages, user),
+                }
+            }
+        ],
+    })
     const result = await agent(user, rems).generate({
         providerOptions: {
             groq: {
