@@ -5,11 +5,11 @@ import { encode } from "@toon-format/toon";
 import { Experimental_Agent as Agent, stepCountIs, tool } from "ai";
 import { embedInputs } from "../ai";
 import { and, eq, inArray } from "drizzle-orm";
-import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
 
-const model = google('gemini-2.0-flash-lite')
+const model = groq('meta-llama/llama-4-maverick-17b-128e-instruct')
 
-const system = `Extract relevant memories from the given conversation between user and assistant and decide how to combine the new memories with the given existing similar memories from the database.
+const preamble = `Extract relevant memories from the given conversation between user and assistant and decide how to combine the new memories with the given existing similar memories from the database.
 
 Each memory must be an atomic fact of the format <subject><verb><predicate>. Examples:
 - User likes coffee
@@ -24,8 +24,6 @@ A memory is classified into one of these categories:
 If no actions required and no relevant information, finish with 'acknowledged' and nothing else.
 
 Strictly reply with a summary of your actions (less than 10 words)
-
-SUMMARY:
 `
 
 export function updateMemoryAgent(user: User) {
@@ -111,6 +109,10 @@ export function updateMemoryAgent(user: User) {
             return encode({ success: true, deleted: input })
         }
     })
+
+    const system = preamble + (user.metadata ?
+        `Some additional info\nusername: ${user.metadata.name ?? 'unknown'}, language: ${user.metadata.language ?? 'English'}, timezone: ${user.metadata.timezone ?? 'UTC'}. Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone\n`
+        : '') + '\nSUMMARY:'
 
     return new Agent({
         model, system,
