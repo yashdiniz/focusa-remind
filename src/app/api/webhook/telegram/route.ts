@@ -90,7 +90,7 @@ bot.on('message', async (ctx) => {
         const result = await replyFromHistory(msgs, user);
 
         // Save user message and assistant response in a transaction
-        const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
+        const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i === result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
             // TODO: use the correct tokenizer based on the model used to get the correct token count
             { role: 'user', content: message.content, tokenCount: ctx.message.text ? encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length : 512 },

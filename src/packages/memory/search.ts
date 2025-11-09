@@ -12,7 +12,7 @@ export async function searchMemories(lastMessage: string, user: User) {
     const query = lastMessage
 
     const embs = await embedInputs([query])
-    if (!embs.embeddings[0] || embs.embeddings.length == 0) {
+    if (!embs.embeddings[0] || embs.embeddings.length === 0) {
         console.error('searchMemories', 'failed to generate embeddings')
         return ''
     }
@@ -32,7 +32,7 @@ export async function searchMemories(lastMessage: string, user: User) {
         .orderBy(t => [desc(t.similarity), desc(memories.createdAt)])
         .limit(10)
         .execute()
-    if (!result[0] || result.length == 0) {
+    if (!result[0] || result.length === 0) {
         console.error('searchMemories', 'failed to query memories (returned empty result)')
         return ''
     }

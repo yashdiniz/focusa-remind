@@ -42,11 +42,11 @@ export function updateMemoryAgent(user: User) {
             const memory = await db.insert(memories).values({
                 userId: user.id, fact: input.content, metadata: { categories: [input.category] }, embedding: embs.embeddings[0],
             }).returning().execute()
-            if (!memory[0] || memory.length == 0) return encode({
+            if (!memory[0] || memory.length === 0) return encode({
                 success: false, error: 'failed to add new memory',
             })
 
-            return encode({ success: true, id: memory[0].id })
+            return encode({ success: true, id: memory[0].id, memory: input.content })
         }
     })
 
@@ -65,7 +65,7 @@ export function updateMemoryAgent(user: User) {
                 const embs = await embedInputs([input.memory])
 
                 return await db.transaction(async tx => {
-                    if (!embs.embeddings[0] || embs.embeddings.length == 0) throw new Error('failed to generate embeddings')
+                    if (!embs.embeddings[0] || embs.embeddings.length === 0) throw new Error('failed to generate embeddings')
 
                     const oldMemory = await tx.update(memories).set({
                         deleted: true, // TODO: right now parent node is deleted to filter it out
@@ -73,15 +73,15 @@ export function updateMemoryAgent(user: User) {
                         eq(memories.userId, user.id),
                         eq(memories.id, input.memoryId),
                     )).returning().execute()
-                    if (!oldMemory[0] || oldMemory.length == 0) throw new Error('failed to update parent memory')
+                    if (!oldMemory[0] || oldMemory.length === 0) throw new Error('failed to update parent memory')
 
                     const memory = await tx.insert(memories).values({
                         userId: user.id, fact: input.memory, embedding: embs.embeddings[0],
                         metadata: oldMemory[0].metadata, parentId: oldMemory[0].id, edgeType: input.type,
                     }).returning().execute()
-                    if (!memory[0] || memory.length == 0) throw new Error('failed to insert child memory')
+                    if (!memory[0] || memory.length === 0) throw new Error('failed to insert child memory')
 
-                    return encode({ success: true, newId: memory[0].id })
+                    return encode({ success: true, newId: memory[0].id, memory: input.memory })
                 })
             } catch (e) {
                 if (e instanceof Error) return encode({
@@ -100,11 +100,11 @@ export function updateMemoryAgent(user: User) {
             const memory = await db.update(memories).set({ deleted: true })
                 .where(and(eq(memories.userId, user.id), inArray(memories.id, input)))
                 .returning().execute()
-            if (!memory[0] || memory.length == 0) return encode({
+            if (!memory[0] || memory.length === 0) return encode({
                 success: false, error: 'failed to delete memories'
             })
 
-            return encode({ success: true, deleted: input })
+            return encode({ success: true, deleted: memory.map(v => ({ id: v.id, fact: v.fact })) })
         }
     })
 
