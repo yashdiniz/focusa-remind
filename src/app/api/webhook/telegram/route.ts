@@ -112,7 +112,7 @@ bot.on('message', async (ctx) => {
                     }
                 }
             })
-            const responses = res.response.messages.map((m, i) => ({ ...m, tokenCount: i == result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
+            const responses = res.response.messages.map((m) => ({ ...m, tokenCount: 0 })).filter(v => v.role === 'tool')
             await saveMessagesForUser(user, responses)
             console.log('telegram webhook updateMemoryAgent:', res.content)
         })());

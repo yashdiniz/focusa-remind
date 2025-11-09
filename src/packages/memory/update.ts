@@ -118,9 +118,9 @@ export function updateMemoryAgent(user: User) {
             stepCountIs(5),
         ],
         tools: {
-            add: addMemory,
-            update: updateMemory,
-            delete: deleteMemory,
+            'memory.add': addMemory,
+            'memory.update': updateMemory,
+            'memory.delete': deleteMemory,
         },
     })
 }
