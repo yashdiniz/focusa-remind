@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const agent = await updateMemoryAgent({
+        const agent = updateMemoryAgent({
             id: 'test-user-id',
             platform: 'telegram',
             identifier: 'test-identifier',
