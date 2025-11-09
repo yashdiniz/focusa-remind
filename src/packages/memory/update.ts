@@ -21,9 +21,7 @@ A memory is classified into one of these categories:
 - episode: summaries of past interactions or completed tasks
 - semantic: relationships between concepts for better reasoning
 
-If no actions required and no relevant information, finish with 'acknowledged' and nothing else.
-
-Strictly reply with a summary of your actions (less than 10 words)
+If no actions required and no relevant information, finish with 'acknowledged', else strictly reply with a summary of your actions (less than 10 words)
 `
 
 export function updateMemoryAgent(user: User) {
