@@ -10,6 +10,7 @@ import { embedMany } from 'ai';
 import { google } from '@ai-sdk/google';
 import { searchMemories } from '../memory';
 import { uuidv7 } from 'uuidv7';
+import { encode } from '@toon-format/toon';
 
 export const MAX_OUTPUT_TOKENS = 1024;
 const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
@@ -66,7 +67,8 @@ export async function replyFromHistory(messages: (UserModelMessage | AssistantMo
         )).orderBy(asc(reminders.dueAt), desc(reminders.createdAt)).limit(5),
     ).execute()
     // add searchMemories result at the top of conversation history
-    messages.unshift({
+    const last = messages.at(-1)?.content ? encode(messages.at(-1)?.content) : ''
+    if (last) messages.unshift({
         role: 'tool',
         content: [
             {
@@ -75,7 +77,7 @@ export async function replyFromHistory(messages: (UserModelMessage | AssistantMo
                 toolName: 'searchMemories',
                 output: {
                     type: 'text',
-                    value: await searchMemories(messages, user),
+                    value: await searchMemories(last, user),
                 }
             }
         ],

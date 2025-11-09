@@ -1,34 +1,15 @@
 import { db } from "@/server/db";
 import { memories, type User } from "@/server/db/schema";
-import { google } from "@ai-sdk/google";
 import { encode } from "@toon-format/toon";
-import { generateObject, type AssistantModelMessage, type ToolModelMessage, type UserModelMessage } from "ai";
 import { and, cosineDistance, desc, eq, sql } from "drizzle-orm";
-import z from "zod";
 import { embedInputs } from "../ai";
 
-const model = google('gemini-2.0-flash-lite')
+// const system = `Generate relevant search query based on conversation provided.
+// Search query must be formatted as a web search query, and is used to search the database for memories.
+// If no search needs to be performed, set noSearch to true, else false`
 
-const system = `Generate relevant search query based on conversation provided.
-Search query must be formatted as a web search query, and is used to search the database for memories.
-If no search needs to be performed, set noSearch to true, else false`
-
-export async function searchMemories(messages: (UserModelMessage | AssistantModelMessage | ToolModelMessage)[], user: User) {
-    const res = await generateObject({
-        model, system,
-        messages,
-        schema: z.object({
-            noSearch: z.boolean().describe('set true if no search is needed'),
-            query: z.string().describe('search query, formatted as a web search query').optional(),
-        }),
-    })
-    console.log('searchMemories query', res.usage)
-    const { noSearch, query } = res.object
-
-    if (noSearch || !query) {
-        console.log('searchMemories', 'no search required')
-        return ''
-    }
+export async function searchMemories(lastMessage: string, user: User) {
+    const query = lastMessage
 
     const embs = await embedInputs([query])
     if (!embs.embeddings[0] || embs.embeddings.length == 0) {
