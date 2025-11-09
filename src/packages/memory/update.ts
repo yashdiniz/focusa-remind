@@ -1,13 +1,13 @@
 import z from "zod";
 import { db } from "@/server/db";
 import { memories, type User } from "@/server/db/schema";
-import { groq } from "@ai-sdk/groq";
 import { encode } from "@toon-format/toon";
 import { Experimental_Agent as Agent, stepCountIs, tool } from "ai";
 import { embedInputs } from "../ai";
 import { and, eq, inArray } from "drizzle-orm";
+import { google } from "@ai-sdk/google";
 
-const model = groq("meta-llama/llama-4-scout-17b-16e-instruct");
+const model = google('gemini-2.0-flash-lite')
 
 const system = `Extract relevant memories from the given conversation between user and assistant and decide how to combine the new memories with the given existing similar memories from the database.
 
