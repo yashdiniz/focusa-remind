@@ -6,6 +6,7 @@ import { replyFromHistory } from '@/packages/ai';
 import { botSendMessage } from '@/packages/slack';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { WebClient } from '@slack/web-api';
+import { encode } from '@toon-format/toon';
 import { waitUntil } from '@vercel/functions';
 import { encodingForModel } from 'js-tiktoken';
 import type { NextRequest } from 'next/server';
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
             // assist user onboarding with slack info
             msgs.push({
                 role: 'user',
-                content: `Data from slack to assist onboarding: ${JSON.stringify(info)}`
+                content: `Data from slack to assist onboarding:\n${encode(info)}`
             })
         }
 

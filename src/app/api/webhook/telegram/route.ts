@@ -9,6 +9,7 @@ import { replyFromHistory, MAX_OUTPUT_TOKENS, transcribeAudio } from '@/packages
 import { delay, type UserModelMessage } from '@ai-sdk/provider-utils';
 import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
+import { encode } from '@toon-format/toon';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
@@ -81,7 +82,7 @@ bot.on('message', async (ctx) => {
 
         if (!user.metadata) {
             // assist user onboarding with telegram info
-            msgs.push({ role: 'user', content: `Data from telegram to assist onboarding: ${JSON.stringify(ctx.from)}. Do not assume timezone, please ask.` })
+            msgs.push({ role: 'user', content: `Data from telegram to assist onboarding:\n${encode(ctx.from)}\nDo not assume timezone, please ask.` })
         }
 
         msgs.push(message);
