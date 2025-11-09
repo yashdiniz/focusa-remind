@@ -76,12 +76,12 @@ const create = (user: User) => tool({
     }).superRefine((o, ctx) => {
         if (o.type === 'one-time' && o.rrule) ctx.addIssue({
             code: 'custom',
-            message: 'dueDate required for one-time reminders',
+            message: 'dueDate required for one-time reminders, do not set rrule',
             path: ['dueDate', 'rrule'],
         })
         else if (o.type === 'recurring' && o.dueDate) ctx.addIssue({
             code: 'custom',
-            message: 'rrule required for recurring reminders',
+            message: 'rrule required for recurring reminders, do not set dueDate',
             path: ['dueDate', 'rrule'],
         })
         else if (!(o.dueDate || o.rrule)) ctx.addIssue("must set either dueDate or rrule")
@@ -181,12 +181,12 @@ const modifyOne = (user: User) => tool({
         if (o.type && (o.rrule || o.dueDate)) {
             if (o.type === 'one-time' && o.rrule) ctx.addIssue({
                 code: 'custom',
-                message: 'dueDate required for one-time reminders',
+                message: 'dueDate required for one-time reminders, do not set rrule',
                 path: ['dueDate', 'rrule'],
             })
             else if (o.type === 'recurring' && o.dueDate) ctx.addIssue({
                 code: 'custom',
-                message: 'rrule required for recurring reminders',
+                message: 'rrule required for recurring reminders, do not set dueDate',
                 path: ['dueDate', 'rrule'],
             })
         }
