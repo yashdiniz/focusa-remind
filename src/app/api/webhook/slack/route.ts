@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
                 }
             })
             const responses = res.response.messages.map((m) => ({ ...m, tokenCount: 0 })).filter(v => v.role === 'tool')
-            await saveMessagesForUser(user, responses)
+            if (responses.length > 0) await saveMessagesForUser(user, responses)
             console.log('telegram webhook updateMemoryAgent:', res.content)
         })())
     } catch (e) {

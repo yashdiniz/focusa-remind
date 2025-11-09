@@ -5,6 +5,7 @@ import { z } from "zod";
 import { tool } from "ai";
 import { /*updateBio,*/ validateTimezone } from "../utils";
 import { encode } from "@toon-format/toon";
+import { searchMemories } from "../memory";
 
 // const keepNote = (user: User) => tool({
 //     name: "keepNote",
@@ -55,31 +56,27 @@ const upsert = (user: User) => tool({
     }
 });
 
-// const searchMemories = (user: User, client: Supermemory) => tool({
-//     description: "Search (recall) memories/details/information about the user or other facts or entities. Run when explicitly asked or when context about user's past choices would be helpful.",
-//     inputSchema: z.object({
-//         informationToGet: z.string().describe("Terms to search for in the user's memories"),
-//     }),
-//     execute: async ({ informationToGet: q }) => {
-//         try {
-//             const response = await client.search.execute({
-//                 q, limit: 10, chunkThreshold: 0.6, includeFullDocs: true,
-//                 containerTags: [`user_${user.platform}-${user.identifier}`],
-//             })
+const search = (user: User) => tool({
+    description: "Search (recall) memories/details/information about the user or other facts or entities. Run when explicitly asked or when context about user's past choices would be helpful",
+    inputSchema: z.object({
+        informationToGet: z.string().describe("Terms to search for in the user's memories"),
+    }),
+    async execute({ informationToGet: q }) {
+        try {
+            const res = await searchMemories(q, user)
 
-//             return encode({
-//                 success: true,
-//                 results: response.results,
-//                 count: response.results?.length || 0,
-//             })
-//         } catch (error) {
-//             return encode({
-//                 success: false,
-//                 error: error instanceof Error ? error.message : "Unknown error",
-//             })
-//         }
-//     },
-// })
+            return encode({
+                success: true,
+                results: res,
+            })
+        } catch (error) {
+            return encode({
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            })
+        }
+    },
+})
 
 // const addMemory = (user: User, client: Supermemory) => tool({
 //     description: "Add (remember) memories/details/information about the user or other facts or entities. Run when explicitly asked or when the user mentions any information generalizable beyond the context of the current conversation.",
@@ -117,7 +114,7 @@ export function userTools(user: User) {
         // add these only after onboarding
         ...(user.metadata ? {
             // "keepNote": keepNote(user),
-            // searchMemories: searchMemories(user, client),
+            searchMemories: search(user),
             // addMemory: addMemory(user, client),
         } : undefined),
     }
