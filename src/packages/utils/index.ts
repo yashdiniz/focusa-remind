@@ -193,11 +193,11 @@ export async function saveMessagesForUser(user: User,
 }
 
 export function reminderListToString(user: User, reminders: ReminderSelect[]) {
-    return `<ReminderList> ${reminders.map(({ deleted, priority, sent, title, dueAt, rrule, description }) => {
+    return `<ReminderList> ${reminders.map(({ id, deleted, priority, sent, title, dueAt, rrule, description }) => {
         const time = dueAt ? `due ${humanTime(dueAt)}, on ${dayjs(dueAt).tz(user.metadata?.timezone ?? 'UTC').format('YYYY-MM-DD HH:mm')}` : 'no due date'
         const recurs = rrule ? `repeats ${rrulestr(rrule).toText()}` : 'one-off'
         const desc = description ?? 'no description'
-        return `- ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
+        return `- id:${id}; ${deleted || sent ? 'done/removed' : 'pending'}; priority ${priority}; ${time}; ${recurs}; ${title}; ${desc}`
     }).join('\n')} </ReminderList>`
 }
 

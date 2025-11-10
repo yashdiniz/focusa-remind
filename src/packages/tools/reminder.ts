@@ -60,9 +60,9 @@ const create = (user: User) => tool({
         title: z.string().describe("Reminder title"),
         type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder"),
         priority: z.enum(['low', 'medium', 'high']).describe("assume reminder priority").default('low'),
-        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional()
+        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Do not set if one-time reminder. Optional").optional()
             .superRefine(validateRRule),
-        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Optional").optional()
+        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Do not set if recurring reminder. Optional").optional()
             .superRefine((z, ctx) => {
                 if (z)
                     try {
@@ -164,9 +164,9 @@ const modifyOne = (user: User) => tool({
         deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional().nullable(),
         title: z.string().describe("Reminder title. Optional").optional().nullable(),
         priority: z.enum(['low', 'medium', 'high']).describe("Reminder priority. Optional").optional().nullable(),
-        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Optional").optional().nullable()
+        rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Do not set if one-time reminder. Optional").optional().nullable()
             .superRefine(validateRRule),
-        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Optional").optional().nullable()
+        dueDate: z.string().describe("Due date in YYYY-MM-DD HH:MM. Do not set if recurring reminder. Optional").optional().nullable()
             .superRefine((z, ctx) => {
                 if (z)
                     try {
