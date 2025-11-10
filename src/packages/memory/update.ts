@@ -9,21 +9,6 @@ import { groq } from "@ai-sdk/groq";
 
 const model = groq('meta-llama/llama-4-maverick-17b-128e-instruct')
 
-const preamble = `Extract relevant memories from the given conversation between user and assistant and decide how to combine the new memories with the given existing similar memories from the database.
-
-Each memory must be an atomic fact of the format <subject><verb><predicate>. Examples:
-- User likes coffee
-- User is interested in LLMs and AI
-- User's friends went home for the holidays
-
-A memory is classified into one of these categories:
-- fact: user preferences, account details, and domain facts
-- episode: summaries of past interactions or completed tasks
-- semantic: relationships between concepts for better reasoning
-
-If no actions required and no relevant information, finish with 'acknowledged', else strictly reply with a summary of your actions (less than 10 words)
-`
-
 export function updateMemoryAgent(user: User) {
     const addMemory = tool({
         name: 'add',
@@ -108,10 +93,25 @@ export function updateMemoryAgent(user: User) {
         }
     })
 
-    const system = preamble + (user.metadata ?
-        `Some additional info\nusername: ${user.metadata.name ?? 'unknown'}, language: ${user.metadata.language ?? 'English'}, timezone: ${user.metadata.timezone ?? 'UTC'}. Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. It's ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone\n`
-        : '') + '\nSUMMARY:'
+    const system = `Extract relevant memories from the given conversation between user and assistant and decide how to combine the new memories with the given existing similar memories from the database
 
+Each memory must be an atomic fact of the format <subject><verb><predicate>. Examples:
+- User likes coffee
+- User is interested in LLMs and AI
+- User's friends went home for the holidays
+
+A memory is classified into one of these categories:
+- fact: user preferences, account details, and domain facts
+- episode: summaries of past interactions or completed tasks
+- semantic: relationships between concepts for better reasoning
+` + (user.metadata ? `
+Some additional info
+username: ${user.metadata.name ?? 'unknown'}, language: ${user.metadata.language ?? 'English'}, timezone: ${user.metadata.timezone ?? 'UTC'}
+Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone
+` : '') + `
+Reply strictly with summary of your actions (10 words or less), else only reply with 'acked' and nothing else
+
+summary:`
     return new Agent({
         model, system,
         stopWhen: [
