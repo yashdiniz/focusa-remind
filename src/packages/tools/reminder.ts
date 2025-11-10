@@ -193,12 +193,18 @@ const modifyOne = (user: User) => tool({
     }),
     async execute(input) {
         console.log(`${user.platform}-${user.identifier}`, "reminder.modify tool called with input:", input);
+
         const updated = await db.update(reminders).set({
             ...(input.title ? { title: input.title } : undefined),
             ...(input.description ? { description: input.description } : undefined),
             ...(input.priority ? { priority: input.priority } : undefined),
-            ...(input.rrule ? { rrule: input.rrule } : undefined),
-            dueAt: input.dueDate ? dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate() : undefined,
+            ...(input.rrule ? {
+                rrule: RRule.fromString(input.rrule).toString(),
+                dueAt: dayjs.tz(RRule.fromString(input.rrule).options.dtstart.toISOString(), RRule.fromString(input.rrule).origOptions.tzid ?? 'UTC').tz(RRule.fromString(input.rrule).origOptions.tzid ?? 'UTC').toDate(),
+            } : undefined),
+            ...(input.dueDate ? {
+                dueAt: dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate(),
+            } : undefined),
             sent: input.completed ?? undefined,
             deleted: input.deleted ?? undefined,
         }).where(and(
