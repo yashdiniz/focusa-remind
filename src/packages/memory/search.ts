@@ -37,5 +37,6 @@ export async function searchMemories(lastMessage: string, user: User) {
         return ''
     }
 
+    console.log('searchMemories', `${result.length} memories fetched`, result)
     return encode(result)
 }
