@@ -9,13 +9,12 @@ import { groq } from "@ai-sdk/groq";
 
 const model = groq('meta-llama/llama-4-maverick-17b-128e-instruct')
 
-const preamble = (metadata: User["metadata"]) => `You are an intelligent memory assistant tasked to extract relevant memories from conversation and decide how to combine the new memories with the given existing similar memories from the database
+const preamble = (metadata: User["metadata"]) => `Extract relevant memories from conversation and decide how to combine the new memories with the given existing similar memories from the database
 # CONTEXT
-You have access to memories in a conversation along with relevent timestamped information
+You have access to memories, relevant timestamped information, and a conversation 
 # Instructions
-- Carefully analyze and look for direct evidence in memories
-- add new information only if similar memories do not already exist
-- if newer/richer information is found and similar memories already exist, update existing memories (replace for newer info, extend for richer info)
+- add new memories to the database
+- if you want to add newer/richer information and you find similar memories, update the existing memories instead (replace for newer info, extend for richer info)
 - if memories contain contradictory information, prioritize the most recent memory, and delete the older memory if there's no information to replace or extend
 
 Each memory must be a unique atomic piece of information, and is classified into one of these categories:
