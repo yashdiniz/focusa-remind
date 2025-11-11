@@ -9,12 +9,34 @@ import { groq } from "@ai-sdk/groq";
 
 const model = groq('meta-llama/llama-4-maverick-17b-128e-instruct')
 
+const preamble = (metadata: User["metadata"]) => `You are an intelligent memory assistant tasked to extract relevant memories from conversation and decide how to combine the new memories with the given existing similar memories from the database
+# CONTEXT
+You have access to memories in a conversation along with relevent timestamped information
+# Instructions
+- Carefully analyze and look for direct evidence in memories
+- add new information only if similar memories do not already exist
+- if newer/richer information is found and similar memories already exist, update existing memories (replace for newer info, extend for richer info)
+- if memories contain contradictory information, prioritize the most recent memory, and delete the older memory if there's no information to replace or extend
+
+Each memory must be a unique atomic piece of information, and is classified into one of these categories:
+- fact: user preferences, account details, and domain facts
+- episode: summaries of past interactions or completed tasks
+- semantic: relationships between concepts for better reasoning
+
+Some additional info
+username: ${metadata?.name ?? 'unknown'}, language: ${metadata?.language ?? 'English'}, timezone: ${metadata?.timezone ?? 'UTC'}
+Today is ${new Date().toLocaleString('en-IN', { timeZone: metadata?.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} on ${new Date().toLocaleString('en-IN', { timeZone: metadata?.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at user's local timezone
+
+Reply strictly with summary of your actions (10 words or less), else only reply with 'acked' and nothing else
+
+summary:`
+
 export function updateMemoryAgent(user: User) {
     const addMemory = tool({
         name: 'add',
         description: 'add a new memories into the database',
         inputSchema: z.object({
-            category: z.enum(['fact', 'episode', 'semantic']),
+            category: z.enum(['fact', 'episode', 'semantic']).describe('classification of new memory'),
             content: z.string().describe('new memory'),
         }),
         async execute(input) {
@@ -40,14 +62,15 @@ export function updateMemoryAgent(user: User) {
         description: 'update existing memory with richer information',
         inputSchema: z.object({
             memoryId: z.uuidv7().describe('id of the memory to update'),
-            memory: z.string().describe('new memory to update the old memory'),
+            content: z.string().describe('new memory to update the old memory'),
             type: z.enum(['replace', 'extend']).describe('type of update operation'),
+            category: z.enum(['fact', 'episode', 'semantic']).describe('classification of new memory'),
         }),
         async execute(input) {
             console.log('updateMemoryAgent update', input)
 
             try {
-                const embs = await embedInputs([input.memory])
+                const embs = await embedInputs([input.content])
 
                 return await db.transaction(async tx => {
                     if (!embs.embeddings[0] || embs.embeddings.length === 0) throw new Error('failed to generate embeddings')
@@ -61,12 +84,12 @@ export function updateMemoryAgent(user: User) {
                     if (!oldMemory[0] || oldMemory.length === 0) throw new Error('failed to update parent memory')
 
                     const memory = await tx.insert(memories).values({
-                        userId: user.id, fact: input.memory, embedding: embs.embeddings[0],
-                        metadata: oldMemory[0].metadata, parentId: oldMemory[0].id, edgeType: input.type,
+                        userId: user.id, fact: input.content, embedding: embs.embeddings[0],
+                        metadata: { categories: [input.category] }, parentId: oldMemory[0].id, edgeType: input.type,
                     }).returning().execute()
                     if (!memory[0] || memory.length === 0) throw new Error('failed to insert child memory')
 
-                    return encode({ success: true, newId: memory[0].id, memory: input.memory })
+                    return encode({ success: true, newId: memory[0].id, memory: input.content })
                 })
             } catch (e) {
                 if (e instanceof Error) return encode({
@@ -93,27 +116,8 @@ export function updateMemoryAgent(user: User) {
         }
     })
 
-    const system = `Extract relevant memories from the given conversation between user and assistant and decide how to combine the new memories with the given existing similar memories from the database
-
-Each memory must be an atomic fact of the format <subject><verb><predicate>. Examples:
-- User likes coffee
-- User is interested in LLMs and AI
-- User's friends went home for the holidays
-
-A memory is classified into one of these categories:
-- fact: user preferences, account details, and domain facts
-- episode: summaries of past interactions or completed tasks
-- semantic: relationships between concepts for better reasoning
-` + (user.metadata ? `
-Some additional info
-username: ${user.metadata.name ?? 'unknown'}, language: ${user.metadata.language ?? 'English'}, timezone: ${user.metadata.timezone ?? 'UTC'}
-Today is ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} ${new Date().toLocaleString('en-IN', { timeZone: user.metadata.timezone ?? 'UTC', hour12: false, hour: 'numeric', minute: 'numeric' })} at user's local timezone
-` : '') + `
-Reply strictly with summary of your actions (10 words or less), else only reply with 'acked' and nothing else
-
-summary:`
     return new Agent({
-        model, system,
+        model, system: preamble(user.metadata),
         stopWhen: [
             stepCountIs(5),
         ],
