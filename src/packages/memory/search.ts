@@ -3,6 +3,11 @@ import { memories, type User } from "@/server/db/schema";
 import { encode } from "@toon-format/toon";
 import { and, cosineDistance, desc, eq, sql } from "drizzle-orm";
 import { embedInputs } from "../ai";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 // const system = `Generate relevant search query based on conversation provided.
 // Search query must be formatted as a web search query, and is used to search the database for memories.
@@ -23,7 +28,7 @@ export async function searchMemories(lastMessage: string, user: User) {
     // await db.execute(sql`SET ivfflat.probes = 10`)
 
     const result = await db
-        .select({ id: memories.id, fact: memories.fact, similarity })
+        .select({ id: memories.id, fact: memories.fact, similarity, ts: memories.createdAt })
         .from(memories)
         .where(and(
             eq(memories.userId, user.id),
@@ -38,5 +43,10 @@ export async function searchMemories(lastMessage: string, user: User) {
     }
 
     console.log('searchMemories', `${result.length} memories fetched`, result)
-    return encode(result)
+    return encode(
+        result.map(v => ({
+            id: v.id, fact: v.fact, similarity: v.similarity,
+            timestamp: dayjs(v.ts).tz(user.metadata?.timezone ?? 'UTC').format('h:mm a [on] D MMM YYYY'),
+        }))
+    )
 }
