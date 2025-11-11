@@ -87,13 +87,25 @@ bot.on('message', async (ctx) => {
         }
 
         msgs.push(message);
+        const res = await updateMemoryAgent(user).generate({
+            messages: msgs,
+            providerOptions: {
+                groq: {
+                    user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
+                }
+            }
+        })
+        console.log('telegram webhook updateMemoryAgent:', res.content)
+        msgs.push(...res.response.messages.filter(v => v.role === 'tool')) // only save tool results from updateMemoryAgent
         const result = await replyFromHistory(msgs, user);
+
 
         // Save user message and assistant response in a transaction
         const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i === result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
             // TODO: use the correct tokenizer based on the model used to get the correct token count
             { role: 'user', content: message.content, tokenCount: ctx.message.text ? encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length : 512 },
+            ...res.response.messages.map((m) => ({ ...m, tokenCount: 0 })).filter(v => v.role === 'tool'), // only save tool results from updateMemoryAgent
             ...responses, // Don't save system messages
         ])
 
@@ -103,18 +115,6 @@ bot.on('message', async (ctx) => {
             }
             if (!result.text.trim()) await botSendMessage(bot, ctx.chatId.toString(), "ℹ️ bot replied with empty text", ctx.message.message_id, interval)
             else await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(), ctx.message.message_id, interval)
-            const agent = updateMemoryAgent(user)
-            const res = await agent.generate({
-                messages: msgs,
-                providerOptions: {
-                    groq: {
-                        user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
-                    }
-                }
-            })
-            const responses = res.response.messages.map((m) => ({ ...m, tokenCount: 0 })).filter(v => v.role === 'tool')
-            if (responses.length > 0) await saveMessagesForUser(user, responses)
-            console.log('telegram webhook updateMemoryAgent:', res.content)
         })());
     } catch (e) {
         console.error('Error processing message:', e);
