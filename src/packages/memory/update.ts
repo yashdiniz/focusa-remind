@@ -7,7 +7,7 @@ import { embedInputs } from "../ai";
 import { and, eq, inArray } from "drizzle-orm";
 import { groq } from "@ai-sdk/groq";
 
-const MAX_OUTPUT_TOKENS = 10240
+const MAX_OUTPUT_TOKENS = 8192
 const model = groq('meta-llama/llama-4-scout-17b-16e-instruct')
 
 const preamble = (metadata: User["metadata"]) => `Extract relevant memories from conversation and decide how to combine the new memories with the given existing similar memories from the database
