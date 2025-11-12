@@ -5,7 +5,7 @@ import { env } from "@/env";
 import { ACCOUNTABILITY_CHECKIN_PROMPT } from "@/packages/agent";
 import { botSendMessage as slackbotSendMessage } from "@/packages/slack";
 import { botSendMessage as telegrambotSendMessage } from "@/packages/telegram";
-import { humanTime } from "@/packages/utils";
+import { getLatestMessagesForUser, humanTime } from "@/packages/utils";
 import { db } from "@/server/db";
 import { messages, reminders } from "@/server/db/schema";
 import { groq } from "@ai-sdk/groq";
@@ -52,28 +52,27 @@ export async function POST(req: NextRequest) {
                 not(reminders.deleted), lte(reminders.dueAt, new Date(body.data.timestamp.getTime() + 15 * 60 * 1000)),
             ),
             with: {
-                user: {
-                    columns: {
-                        platform: true,
-                        identifier: true,
-                    }
-                }
+                user: true
             }
         }).execute()
         console.log('fetched reminders', rems.length)
         for (const reminder of rems) {
             await db.transaction(async tx => {
                 const user = reminder.user
+                const msgs = await getLatestMessagesForUser(user)
                 const gen = await agent.generate({
                     providerOptions: {
                         groq: {
                             user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
                         },
                     },
-                    messages: [{
-                        role: 'user',
-                        content: `title:${reminder.title}\ndescription:${reminder.description}\n${reminder.dueAt ? `due:${humanTime(reminder.dueAt)}` : ''}`
-                    }]
+                    messages: [
+                        ...msgs,
+                        {
+                            role: 'user',
+                            content: `title:${reminder.title}\ndescription:${reminder.description}\n${reminder.dueAt ? `due:${humanTime(reminder.dueAt)}` : ''}`
+                        }
+                    ]
                 })
                 await tx.insert(messages).values({
                     userId: reminder.userId,
