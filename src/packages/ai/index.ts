@@ -13,7 +13,7 @@ import { uuidv7 } from 'uuidv7';
 import { encode } from '@toon-format/toon';
 
 export const MAX_OUTPUT_TOKENS = 1024;
-const model = groq("meta-llama/llama-4-scout-17b-16e-instruct"); // groq('gemma2-9b-it');
+const model = groq("meta-llama/llama-4-maverick-17b-16e-instruct"); // groq('gemma2-9b-it');
 
 /**
  * Generate a response from the AI model.

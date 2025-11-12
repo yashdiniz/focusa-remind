@@ -7,7 +7,8 @@ import { embedInputs } from "../ai";
 import { and, eq, inArray } from "drizzle-orm";
 import { groq } from "@ai-sdk/groq";
 
-const model = groq('meta-llama/llama-4-maverick-17b-128e-instruct')
+const MAX_OUTPUT_TOKENS = 1024
+const model = groq('meta-llama/llama-4-scout-17b-128e-instruct')
 
 const preamble = (metadata: User["metadata"]) => `Extract relevant memories from conversation and decide how to combine the new memories with the given existing similar memories from the database
 # CONTEXT
@@ -117,6 +118,7 @@ export function updateMemoryAgent(user: User) {
 
     return new Agent({
         model, system: preamble(user.metadata),
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
         stopWhen: [
             stepCountIs(5),
         ],
