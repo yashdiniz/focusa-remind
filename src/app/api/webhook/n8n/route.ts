@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
         })
         const rems = await db.query.reminders.findMany({
             where: (reminders, { lte, and, not }) => and(
-                not(reminders.deleted), lte(reminders.dueAt, new Date(body.data.timestamp.getTime() + 15 * 60 * 1000)),
+                not(reminders.deleted),
+                lte(reminders.dueAt, new Date(body.data.timestamp.getTime() + 15 * 60 * 1000)),
             ),
             with: {
                 user: true
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
         }).execute()
         console.log('fetched reminders', rems.length)
         for (const reminder of rems) {
+            if (!reminder.rrule && reminder.sent) continue // skipping the reminder
             await db.transaction(async tx => {
                 const user = reminder.user
                 const msgs = await getLatestMessagesForUser(user)
