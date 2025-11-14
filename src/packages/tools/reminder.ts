@@ -7,7 +7,7 @@ import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
 import { db } from "@/server/db";
-import { and, eq, gte, ilike, inArray, isNotNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, ilike, isNotNull, lte, or } from "drizzle-orm";
 import { encode } from '@toon-format/toon';
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -156,12 +156,10 @@ const show = (user: User) => tool({
 
 const modifyOne = (user: User) => tool({
     name: "reminder.modify",
-    description: "Modify existing reminder. Only set fields that need to be updated. To mark as completed/deleted, set the respective boolean to true",
+    description: "Modify existing reminder. Only set fields that need to be updated",
     inputSchema: z.object({
         id: z.uuidv7().describe("Reminder ID"),
         type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder. Optional").optional().nullable(),
-        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional().nullable(),
-        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional().nullable(),
         title: z.string().describe("Reminder title. Optional").optional().nullable(),
         priority: z.enum(['low', 'medium', 'high']).describe("Reminder priority. Optional").optional().nullable(),
         rrule: z.string().describe("Recurrence rule, always include DTSTART;TZID with user local timezone. Do not set if one-time reminder. Optional").optional().nullable()
@@ -205,8 +203,6 @@ const modifyOne = (user: User) => tool({
             ...(input.dueDate ? {
                 dueAt: dayjs.tz(input.dueDate, user.metadata?.timezone ?? 'UTC').tz(user.metadata?.timezone ?? 'UTC').toDate(),
             } : undefined),
-            sent: input.completed ?? undefined,
-            deleted: input.deleted ?? undefined,
         }).where(and(
             eq(reminders.userId, user.id),
             eq(reminders.id, input.id),
@@ -216,28 +212,24 @@ const modifyOne = (user: User) => tool({
     }
 });
 
-const modifyBulk = (user: User) => tool({
-    name: "reminder.bulkModify",
-    description: "Mark multiple reminders as completed or deleted. Must set any one of ids or search, not both, even when deleting all reminders",
+const markOne = (user: User) => tool({
+    name: "reminder.mark",
+    description: "Mark a reminder as completed or deleted",
     inputSchema: z.object({
-        ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").nullable(),
-        search: RetrievalSchema(user).describe("search for reminders. only set necessary fields, else undefined. Optional").nullable(),
-        completed: z.boolean().describe("Mark the reminder as completed. Optional").nullable(),
-        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").nullable(),
-    }).partial().superRefine((o, ctx) => {
-        if (!(o.ids || o.search) || (o.ids && o.search)) ctx.addIssue("must set any one of ids or search, not both")
+        id: z.uuidv7().describe("Reminder ID"),
+        completed: z.boolean().describe("Mark the reminder as completed. Optional").optional().nullable(),
+        deleted: z.boolean().describe("Mark the reminder as deleted. Optional").optional().nullable(),
     }),
     async execute(input) {
-        console.log(`${user.platform}-${user.identifier}`, "reminder.bulkModify tool called with input:", input);
+        console.log(`${user.platform}-${user.identifier}`, "reminder.mark tool called with input:", input);
         const updated = await db.update(reminders).set({
             sent: input.completed ?? undefined,
             deleted: input.deleted ?? undefined,
         }).where(and(
             eq(reminders.userId, user.id),
-            input.ids ? inArray(reminders.id, input.ids) : undefined,
-            input.search ? searchQuery(user, input.search) : undefined,
+            eq(reminders.id, input.id),
         )).execute()
-        console.log(`${user.platform}-${user.identifier}`, `reminder.bulkModify updated ${updated.toString()} reminders`);
+        console.log(`${user.platform}-${user.identifier}`, `reminder.mark updated ${updated.toString()} reminders`);
         return encode({ success: true })
     }
 });
@@ -248,7 +240,7 @@ export function reminderTools(user: User) {
             "reminder.create": create(user),
             "reminder.show": show(user),
             "reminder.modify": modifyOne(user),
-            "reminder.bulkModify": modifyBulk(user),
+            "reminder.mark": markOne(user),
         } : undefined),
     }
 }

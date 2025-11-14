@@ -10,6 +10,7 @@ import { db } from "@/server/db";
 import { messages, reminders } from "@/server/db/schema";
 import { groq } from "@ai-sdk/groq";
 import { WebClient } from "@slack/web-api";
+import { encode } from "@toon-format/toon";
 import { Experimental_Agent as Agent } from "ai";
 import { eq } from "drizzle-orm";
 import { Bot } from "grammy";
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
             system: ACCOUNTABILITY_CHECKIN_PROMPT,
         })
         const rems = await db.query.reminders.findMany({
-            where: (reminders, { lte, and, not }) => and(
-                not(reminders.deleted),
+            where: (reminders, { lte, and, not, isNotNull }) => and(
+                not(reminders.deleted), and(isNotNull(reminders.rrule), eq(reminders.sent, false)),
                 lte(reminders.dueAt, new Date(body.data.timestamp.getTime() + 15 * 60 * 1000)),
             ),
             with: {
@@ -57,11 +58,17 @@ export async function POST(req: NextRequest) {
             }
         }).execute()
         console.log('fetched reminders', rems.length)
+        const u_rems: Record<string, (typeof rems)> = {}
         for (const reminder of rems) {
-            if (!reminder.rrule && reminder.sent) continue // skipping the reminder
+            const userId = reminder.userId
+            if (!u_rems[userId]) u_rems[userId] = [reminder]
+            else u_rems[userId].push(reminder)
+        }
+        for (const userId in u_rems) {
+            const rems = u_rems[userId]!
+            const user = rems[0]!.user
+            const msgs = await getLatestMessagesForUser(user)
             await db.transaction(async tx => {
-                const user = reminder.user
-                const msgs = await getLatestMessagesForUser(user)
                 const gen = await agent.generate({
                     providerOptions: {
                         groq: {
@@ -72,28 +79,20 @@ export async function POST(req: NextRequest) {
                         ...msgs,
                         {
                             role: 'user',
-                            content: `title:${reminder.title}\ndescription:${reminder.description}\n${reminder.dueAt ? `due:${humanTime(reminder.dueAt)}` : ''}`
+                            content: encode(rems.map(v => ({
+                                title: v.title, description: v.description, ...(v.dueAt ? { due: humanTime(v.dueAt) } : undefined),
+                            })))
                         }
                     ]
                 })
                 await tx.insert(messages).values({
-                    userId: reminder.userId,
-                    role: 'assistant',
+                    userId, role: 'assistant',
                     tokenCount: 30,
                     content: {
                         role: 'assistant',
                         content: gen.text,
                     }
                 }).execute()
-                await tx.update(reminders).set({
-                    // reminders stop sending only after due date. (basically remind multiple times every 15 minutes)
-                    sent: reminder.dueAt !== null && (reminder.dueAt.getTime() <= Date.now()),
-                    ...(reminder.rrule && reminder.dueAt ? {
-                        // sets to false if there's another due date, otherwise sets to true
-                        sent: RRule.fromString(reminder.rrule).after(reminder.dueAt) === null,
-                        dueAt: RRule.fromString(reminder.rrule).after(reminder.dueAt),
-                    } : null)
-                }).where(eq(reminders.id, reminder.id)).execute()
                 switch (user.platform) {
                     case 'slack':
                         console.log('send slack message')
@@ -104,6 +103,16 @@ export async function POST(req: NextRequest) {
                         await telegrambotSendMessage(telegrambot, user.identifier, gen.text)
                         break;
                 }
+                for (const reminder of rems)
+                    await tx.update(reminders).set({
+                        // reminders stop sending only after due date. (basically remind multiple times every 15 minutes)
+                        sent: reminder.dueAt !== null && (reminder.dueAt.getTime() <= Date.now()),
+                        ...(reminder.rrule && reminder.dueAt ? {
+                            // sets to false if there's another due date, otherwise sets to true
+                            sent: RRule.fromString(reminder.rrule).after(reminder.dueAt) === null,
+                            dueAt: RRule.fromString(reminder.rrule).after(reminder.dueAt),
+                        } : null)
+                    }).where(eq(reminders.id, reminder.id)).execute()
             })
         }
         return new Response('success!')
