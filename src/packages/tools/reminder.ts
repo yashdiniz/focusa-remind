@@ -214,7 +214,7 @@ const modifyOne = (user: User) => tool({
 
 const markOne = (user: User) => tool({
     name: "reminder.mark",
-    description: "Mark a reminder as completed or deleted",
+    description: "Delete a reminder or mark as completed",
     inputSchema: z.object({
         id: z.uuidv7().describe("Reminder ID"),
         completed: z.boolean().describe("Mark the reminder as completed. Optional").optional().nullable(),
