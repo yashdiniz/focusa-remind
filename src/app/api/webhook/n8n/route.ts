@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
             system: ACCOUNTABILITY_CHECKIN_PROMPT,
         })
         const rems = await db.query.reminders.findMany({
-            where: (reminders, { lte, and, not, isNotNull }) => and(
-                not(reminders.deleted), and(isNotNull(reminders.rrule), eq(reminders.sent, false)),
+            where: (reminders, { lte, and, not, isNull, isNotNull, or }) => and(
+                not(reminders.deleted), or(isNotNull(reminders.rrule), and(isNull(reminders.rrule), not(reminders.sent))),
                 lte(reminders.dueAt, new Date(body.data.timestamp.getTime() + 15 * 60 * 1000)),
             ),
             with: {
