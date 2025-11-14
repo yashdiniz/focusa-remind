@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     try {
         // reusable agent for reminder generation
         const agent = new Agent({
-            model: groq('llama-3.1-8b-instant'), maxOutputTokens: 100,
+            model: groq('llama-3.1-8b-instant'), maxOutputTokens: 1024,
             system: ACCOUNTABILITY_CHECKIN_PROMPT,
         })
         const rems = await db.query.reminders.findMany({
