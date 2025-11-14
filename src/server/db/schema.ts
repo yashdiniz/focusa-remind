@@ -71,9 +71,7 @@ export const reminders = createTable("reminder", d => ({
   rrule: d.text("rrule"),
   description: d.text("description"),
   ...createdAtMixin, ...updatedAtMixin,
-}), t => [
-  index('title_description_search_idx').using('gin', sql`to_tsvector('english', coalesce(concat(${t.title}, ' ', ${t.description}), ${t.title}))`),
-])
+}))
 
 export const reminderRelations = relations(reminders, ({ one }) => ({
   user: one(users, { fields: [reminders.userId], references: [users.id] }),
@@ -111,7 +109,6 @@ export const memories = createTable("memory", d => ({
   deleted: d.boolean("deleted").notNull().default(false), // basically completed flag
   ...createdAtMixin,
 }), t => [
-  index('fact_search_idx').using('gin', sql`to_tsvector('english', ${t.fact})`),
   foreignKey({ name: "memory_parent_id_fk_idx", columns: [t.parentId], foreignColumns: [t.id] }),
   index("memory_embedding_idx").using('hnsw', t.embedding.op('vector_cosine_ops')),
 ])
