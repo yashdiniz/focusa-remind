@@ -1,6 +1,5 @@
 import { db } from "@/server/db";
 import { memories, type User } from "@/server/db/schema";
-import { encode } from "@toon-format/toon";
 import { and, cosineDistance, desc, eq, sql } from "drizzle-orm";
 import { embedInputs } from "../ai";
 import dayjs from "dayjs";
@@ -13,13 +12,13 @@ dayjs.extend(timezone)
 // Search query must be formatted as a web search query, and is used to search the database for memories.
 // If no search needs to be performed, set noSearch to true, else false`
 
-export async function searchMemories(lastMessage: string, user: User) {
+export async function searchMemories(lastMessage: string, user: User, limit = 10) {
     const query = lastMessage
 
     const embs = await embedInputs([query])
     if (!embs.embeddings[0] || embs.embeddings.length === 0) {
         console.error('searchMemories', 'failed to generate embeddings')
-        return ''
+        return []
     }
 
     const similarity = sql<number>`1 - (${cosineDistance(memories.embedding, embs.embeddings[0])})`;
@@ -35,18 +34,16 @@ export async function searchMemories(lastMessage: string, user: User) {
             eq(memories.deleted, false),
         ))
         .orderBy(t => [desc(t.similarity), desc(memories.createdAt)])
-        .limit(10)
+        .limit(limit)
         .execute()
     if (!result[0] || result.length === 0) {
         console.error('searchMemories', 'failed to query memories (returned empty result)')
-        return ''
+        return []
     }
 
     console.log('searchMemories', `${result.length} memories fetched`, result)
-    return encode(
-        result.map(v => ({
-            id: v.id, fact: v.fact, similarity: v.similarity,
-            timestamp: dayjs(v.ts).tz(user.metadata?.timezone ?? 'UTC').format('h:mm a [on] D MMM YYYY'),
-        }))
-    )
+    return result.map(v => ({
+        id: v.id, fact: v.fact, similarity: v.similarity,
+        timestamp: dayjs(v.ts).tz(user.metadata?.timezone ?? 'UTC').format('h:mm a [on] D MMM YYYY'),
+    }))
 }

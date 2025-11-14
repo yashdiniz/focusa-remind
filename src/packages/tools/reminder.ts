@@ -7,7 +7,7 @@ import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
 import { db } from "@/server/db";
-import { and, eq, gte, ilike, isNotNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { encode } from '@toon-format/toon';
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -33,7 +33,7 @@ const RetrievalSchema = (user: User) => z.object({
                     if (e instanceof Error) ctx.addIssue(`Invalid timestamp ${e.message}`)
                 }
         }),
-    keywords: z.array(z.string()).describe("keywords to search in title/description. Optional"),
+    informationToGet: z.string().describe("Terms to search for in the user's memories in web search query format. Optional"),
     includeCompleted: z.boolean().describe("whether to include completed reminders").default(false),
     recurring: z.boolean().describe("whether to filter only recurring reminders").default(false),
 }).partial().superRefine((o, ctx) => {
@@ -41,15 +41,13 @@ const RetrievalSchema = (user: User) => z.object({
 })
 
 function searchQuery(user: User, input: unknown) {
-    const { from, to, includeCompleted, recurring, keywords } = RetrievalSchema(user).parse(input)
+    const { from, to, includeCompleted, recurring, informationToGet } = RetrievalSchema(user).parse(input)
     return and(
         from ? gte(reminders.dueAt, dayjs.tz(from, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
         to ? lte(reminders.dueAt, dayjs.tz(to, user.metadata?.timezone ?? 'UTC').tz('UTC').toDate()) : undefined,
         eq(reminders.sent, includeCompleted ?? false),
         recurring ? isNotNull(reminders.rrule) : undefined,
-        keywords && keywords.length > 0 ? or(
-            ...keywords.map(kw => or(ilike(reminders.title, `%${kw}%`), ilike(reminders.description, `%${kw}%`)))
-        ) : undefined,
+        informationToGet ? sql`to_tsvector('english', coalesce(concat(${reminders.title}, ' ', ${reminders.description}), ${reminders.title})) @@ websearch_to_tsquery('english', ${informationToGet})` : undefined,
     )
 }
 

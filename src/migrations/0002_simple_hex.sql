@@ -1,0 +1,2 @@
+CREATE INDEX "fact_search_idx" ON "focusa_remind_memory" USING gin (to_tsvector('english', "fact"));--> statement-breakpoint
+CREATE INDEX "title_description_search_idx" ON "focusa_remind_reminder" USING gin (to_tsvector('english', coalesce(concat("title", ' ', "description"), "title")));

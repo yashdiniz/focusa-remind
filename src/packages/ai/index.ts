@@ -77,7 +77,7 @@ export async function replyFromHistory(messages: (UserModelMessage | AssistantMo
                 toolName: 'searchMemories',
                 output: {
                     type: 'text',
-                    value: await searchMemories(last, user),
+                    value: encode(await searchMemories(last, user)),
                 }
             }
         ],

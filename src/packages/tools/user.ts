@@ -1,11 +1,16 @@
 import { db } from "@/server/db";
-import { eq } from "drizzle-orm";
-import { users, type User } from "@/server/db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import { memories, users, type User } from "@/server/db/schema";
 import { z } from "zod";
 import { tool } from "ai";
 import { /*updateBio,*/ validateTimezone } from "../utils";
 import { encode } from "@toon-format/toon";
 import { searchMemories } from "../memory";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 // const keepNote = (user: User) => tool({
 //     name: "keepNote",
@@ -59,11 +64,23 @@ const upsert = (user: User) => tool({
 const search = (user: User) => tool({
     description: "Search (recall) memories/details/information about the user or other facts or entities. Run when explicitly asked or when context about user's past choices would be helpful",
     inputSchema: z.object({
-        informationToGet: z.string().describe("Terms to search for in the user's memories"),
+        informationToGet: z.string().describe("Terms to search for in the user's memories in web search query format"),
     }),
     async execute({ informationToGet: q }) {
         try {
-            const res = await searchMemories(q, user)
+            const ts_result = await db
+                .select({ id: memories.id, fact: memories.fact, similarity: sql<number>`1`, ts: memories.createdAt })
+                .from(memories)
+                .where(and(
+                    eq(memories.userId, user.id),
+                    sql`to_tsvector('english', ${memories.fact}) @@ websearch_to_tsquery('english', ${q})`
+                )).execute()
+
+            const res = ts_result.map(v => ({
+                id: v.id, fact: v.fact, similarity: v.similarity,
+                timestamp: dayjs(v.ts).tz(user.metadata?.timezone ?? 'UTC').format('h:mm a [on] D MMM YYYY'),
+            }))
+            if (ts_result.length < 10) res.push(...(await searchMemories(q, user, 10 - ts_result.length)))
 
             return encode({
                 success: true,
