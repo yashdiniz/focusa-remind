@@ -80,7 +80,9 @@ export async function POST(req: NextRequest) {
                         {
                             role: 'user',
                             content: encode(rems.map(v => ({
-                                title: v.title, description: v.description, ...(v.dueAt ? { due: humanTime(v.dueAt) } : undefined),
+                                title: v.title,
+                                ...(v.description ? { description: v.description } : undefined),
+                                ...(v.dueAt ? { due: humanTime(v.dueAt) } : undefined),
                             })))
                         }
                     ]
