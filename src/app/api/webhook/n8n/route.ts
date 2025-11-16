@@ -111,8 +111,8 @@ export async function POST(req: NextRequest) {
                         sent: reminder.dueAt !== null && (reminder.dueAt.getTime() <= Date.now()),
                         ...(reminder.rrule && reminder.dueAt ? {
                             // sets to false if there's another due date, otherwise sets to true
-                            sent: RRule.fromString(reminder.rrule).after(reminder.dueAt) === null,
-                            dueAt: RRule.fromString(reminder.rrule).after(reminder.dueAt),
+                            sent: RRule.fromString(reminder.rrule).after(new Date()) === null,
+                            dueAt: RRule.fromString(reminder.rrule).after(new Date()),
                         } : null)
                     }).where(eq(reminders.id, reminder.id)).execute()
             })
