@@ -52,7 +52,6 @@ function searchQuery(user: User, input: unknown) {
 }
 
 const create = (user: User) => tool({
-    name: "reminder.create",
     description: "Create reminder. One-time reminders have due date. Recurring reminders have rrule. Set either one, not both. If no time provided, assume user means a few hours ahead. Share output of `repeats` with user to confirm",
     inputSchema: z.object({
         title: z.string().describe("Reminder title"),
@@ -123,8 +122,7 @@ const create = (user: User) => tool({
     },
 });
 
-const show = (user: User) => tool({
-    name: "reminder.show",
+const search = (user: User) => tool({
     description: "Search (list/display) matching reminders. Run only when reminder details are not already in ReminderList. Leave both ids and search undefined to get all reminders, else must set any one of ids or search, not both",
     inputSchema: z.object({
         ids: z.array(z.uuidv7()).describe("list of reminder IDs. Optional").nullable(),
@@ -152,9 +150,8 @@ const show = (user: User) => tool({
     },
 });
 
-const modifyOne = (user: User) => tool({
-    name: "reminder.modify",
-    description: "Modify existing reminder. Only set fields that need to be updated",
+const update = (user: User) => tool({
+    description: "Update/modify existing reminder. Only set fields that need to be updated",
     inputSchema: z.object({
         id: z.uuidv7().describe("Reminder ID"),
         type: z.enum(['one-time', 'recurring']).describe("one-time or recurring reminder. Optional").optional().nullable(),
@@ -210,8 +207,7 @@ const modifyOne = (user: User) => tool({
     }
 });
 
-const markOne = (user: User) => tool({
-    name: "reminder.mark",
+const mark = (user: User) => tool({
     description: "Delete a reminder or mark as completed",
     inputSchema: z.object({
         id: z.uuidv7().describe("Reminder ID"),
@@ -235,10 +231,10 @@ const markOne = (user: User) => tool({
 export function reminderTools(user: User) {
     return {
         ...(user.metadata ? {
-            "reminder.create": create(user),
-            "reminder.show": show(user),
-            "reminder.modify": modifyOne(user),
-            "reminder.mark": markOne(user),
+            createReminder: create(user),
+            searchReminders: search(user),
+            updateReminder: update(user),
+            markReminder: mark(user),
         } : undefined),
     }
 }
