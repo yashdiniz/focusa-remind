@@ -12,7 +12,7 @@ dayjs.extend(timezone)
 // Search query must be formatted as a web search query, and is used to search the database for memories.
 // If no search needs to be performed, set noSearch to true, else false`
 
-export async function searchMemories(lastMessage: string, user: User, limit = 10) {
+export async function searchMemories(lastMessage: string, user: User, skipIds = true, limit = 10) {
     const query = lastMessage
 
     const embs = await embedInputs([query])
@@ -27,7 +27,7 @@ export async function searchMemories(lastMessage: string, user: User, limit = 10
     // await db.execute(sql`SET ivfflat.probes = 10`)
 
     const result = await db
-        .select({ id: memories.id, fact: memories.fact, similarity, ts: memories.createdAt })
+        .select({ ...(skipIds ? undefined : { id: memories.id }), fact: memories.fact, similarity, ts: memories.createdAt })
         .from(memories)
         .where(and(
             eq(memories.userId, user.id),
@@ -43,7 +43,7 @@ export async function searchMemories(lastMessage: string, user: User, limit = 10
 
     console.log('searchMemories', `${result.length} memories fetched`, result)
     return result.map(v => ({
-        id: v.id, fact: v.fact, similarity: v.similarity,
+        ...(skipIds ? undefined : { id: v.id }), fact: v.fact, similarity: v.similarity,
         timestamp: dayjs(v.ts).tz(user.metadata?.timezone ?? 'UTC').format('h:mm a [on] D MMM YYYY'),
     }))
 }

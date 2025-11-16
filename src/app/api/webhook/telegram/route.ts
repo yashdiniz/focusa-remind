@@ -10,7 +10,7 @@ import { delay, type UserModelMessage } from '@ai-sdk/provider-utils';
 import { encodingForModel } from 'js-tiktoken';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { encode } from '@toon-format/toon';
-import { updateMemoryAgent } from '@/packages/memory';
+import { InvalidToolInputError, NoSuchToolError } from 'ai';
 
 const token = env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
@@ -87,25 +87,13 @@ bot.on('message', async (ctx) => {
         }
 
         msgs.push(message);
-        const res = await updateMemoryAgent(user).generate({
-            messages: msgs,
-            providerOptions: {
-                groq: {
-                    user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
-                }
-            }
-        })
-        console.log('telegram webhook updateMemoryAgent:', res.content)
-        msgs.push(...res.response.messages.filter(v => v.role === 'tool')) // only save tool results from updateMemoryAgent
         const result = await replyFromHistory(msgs, user);
-
 
         // Save user message and assistant response in a transaction
         const responses = result.response.messages.map((m, i) => ({ ...m, tokenCount: i === result.response.messages.length - 1 ? (result.usage.outputTokens ?? 512) : 0 }))
         await saveMessagesForUser(user, [
             // TODO: use the correct tokenizer based on the model used to get the correct token count
             { role: 'user', content: message.content, tokenCount: ctx.message.text ? encodingForModel('gpt-3.5-turbo').encode(ctx.message.text).length : 512 },
-            ...res.response.messages.map((m) => ({ ...m, tokenCount: 0 })).filter(v => v.role === 'tool'), // only save tool results from updateMemoryAgent
             ...responses, // Don't save system messages
         ])
 
@@ -117,7 +105,9 @@ bot.on('message', async (ctx) => {
             else await botSendMessage(bot, ctx.chatId.toString(), result.text.trim(), ctx.message.message_id, interval)
         })());
     } catch (e) {
-        console.error('Error processing message:', e);
+        if (NoSuchToolError.isInstance(e)) console.error('Tool error:', e)
+        else if (InvalidToolInputError.isInstance(e)) console.error('Tool input error:', e)
+        else console.error('Error processing message:', e);
         await botSendMessage(bot, ctx.chatId.toString(), "⚠️ Sorry, something went wrong while processing your message. Please try again later.",
             ctx.message.message_id, interval);
         return;

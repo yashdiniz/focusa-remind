@@ -5,8 +5,7 @@ import { env } from "@/env";
 import { encode } from "@toon-format/toon";
 
 const internet = (user: User) => tool({
-    name: "search.internet",
-    description: "Search the internet using Google. Run when explicitly asked or when searching for general information would be helpful.",
+    description: "Search the internet using Google. Run when explicitly asked or when searching for general information would be helpful",
     inputSchema: z.object({
         informationToGet: z.string().describe("Terms to search for on the Internet"),
     }),
@@ -55,7 +54,7 @@ const internet = (user: User) => tool({
 export function searchTools(user: User) {
     return {
         ...(user.metadata ? {
-            "search.internet": internet(user),
+            searchInternet: internet(user),
             // searchYouTube: searchYouTube(user),
         } : undefined)
     }

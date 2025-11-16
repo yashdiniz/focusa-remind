@@ -3,6 +3,7 @@ import { type User } from "@/server/db/schema";
 import { userTools } from "./user";
 import { reminderTools } from "./reminder";
 import { searchTools } from "./search";
+import { memoryTools } from "./memory";
 
 /**
  * Toolset for the AI agent. Wraps each tool with user context.
@@ -19,5 +20,6 @@ export function tools(user: User): ToolSet {
         ...userTools(user),
         ...reminderTools(user),
         ...searchTools(user),
+        ...memoryTools(user),
     }
 }

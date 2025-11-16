@@ -10,12 +10,12 @@ import { groq } from "@ai-sdk/groq";
 const MAX_OUTPUT_TOKENS = 8192
 const model = groq('meta-llama/llama-4-scout-17b-16e-instruct')
 
-const preamble = (metadata: User["metadata"]) => `Extract relevant memories from conversation and decide how to combine the new memories with the given existing similar memories from the database
+const preamble = (metadata: User["metadata"]) => `Decide how to combine the new memories with the given existing similar memories from the database
 # CONTEXT
-You have access to memories, relevant timestamped information, and a conversation 
+You have access to memories, relevant timestamped information, and the latest memories of the user
 # Instructions
 - add new memories to the database
-- if you want to add newer/richer information and you find similar memories, update the existing memories instead (replace for newer info, extend for richer info)
+- if you find similar memories, update/enrich existing memories instead (replace for newer info, extend for richer info)
 - if memories contain contradictory information, prioritize the most recent memory, and delete the older memory if there's no information to replace or extend
 
 Each memory must be a unique atomic piece of information, and is classified into one of these categories:
@@ -120,7 +120,7 @@ export function updateMemoryAgent(user: User) {
         model, system: preamble(user.metadata),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         stopWhen: [
-            stepCountIs(5),
+            stepCountIs(10),
         ],
         tools: {
             'memory.add': addMemory,

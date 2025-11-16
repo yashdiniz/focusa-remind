@@ -3,12 +3,12 @@ export const fetchCache = 'force-no-store';
 
 import { env } from '@/env';
 import { replyFromHistory } from '@/packages/ai';
-import { updateMemoryAgent } from '@/packages/memory';
 import { botSendMessage } from '@/packages/slack';
 import { getLatestMessagesForUser, getUserFromIdentifier, saveMessagesForUser } from '@/packages/utils';
 import { WebClient } from '@slack/web-api';
 import { encode } from '@toon-format/toon';
 import { waitUntil } from '@vercel/functions';
+import { InvalidToolInputError, NoSuchToolError } from 'ai';
 import { encodingForModel } from 'js-tiktoken';
 import type { NextRequest } from 'next/server';
 import z from 'zod';
@@ -87,16 +87,6 @@ export async function POST(req: NextRequest) {
         }
 
         msgs.push({ role: 'user', content: body.data.event.text })
-        const res = await updateMemoryAgent(user).generate({
-            messages: msgs,
-            providerOptions: {
-                groq: {
-                    user: `${user.platform}-${user.identifier}`, // Unique identifier for the user (optional)
-                }
-            }
-        })
-        console.log('telegram webhook updateMemoryAgent:', res.content)
-        msgs.push(...res.response.messages.filter(v => v.role === 'tool'))  // only save tool results of updateMemoryAgent
         const result = await replyFromHistory(msgs, user);
 
         // Save user message and assistant response in a transaction
@@ -104,7 +94,6 @@ export async function POST(req: NextRequest) {
         await saveMessagesForUser(user, [
             // TODO: use the correct tokenizer based on the model used to get the correct token count
             { role: 'user', content: body.data.event.text, tokenCount: encodingForModel('gpt-3.5-turbo').encode(body.data.event.text).length },
-            ...res.response.messages.map((m) => ({ ...m, tokenCount: 0 })).filter(v => v.role === 'tool'), // only save tool results of updateMemoryAgent
             ...responses, // Don't save system messages
         ])
 
@@ -113,7 +102,9 @@ export async function POST(req: NextRequest) {
             else await botSendMessage(bot, body.data.event.channel, result.text.trim())
         })())
     } catch (e) {
-        console.error('Error processing message:', e)
+        if (NoSuchToolError.isInstance(e)) console.error('Tool error:', e)
+        else if (InvalidToolInputError.isInstance(e)) console.error('Tool input error:', e)
+        else console.error('Error processing message:', e);
         await botSendMessage(bot, body.data.event.channel, '⚠️ Sorry, something went wrong while processing your message. Please try again later.')
         return new Response('Error processing message', { status: 500 })
     }
