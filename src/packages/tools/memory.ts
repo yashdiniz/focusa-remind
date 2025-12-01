@@ -12,7 +12,7 @@ import { uuidv7 } from "uuidv7";
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-const search = (user: User) => tool({
+const get = (user: User) => tool({
     description: "Search (recall) memories/details/information about the user or other facts or entities. Run when explicitly asked or when context about user's past choices would be helpful",
     inputSchema: z.object({
         informationToGet: z.string().describe("Terms to search for in the user's memories in web search query format"),
@@ -90,7 +90,7 @@ const add = (user: User) => tool({
 export function memoryTools(user: User) {
     return {
         ...(user.metadata ? {
-            searchMemories: search(user),
+            findMemories: get(user),
             addMemories: add(user),
         } : undefined),
     }
