@@ -65,6 +65,7 @@ export const reminders = createTable("reminder", d => ({
   userId: d.uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   sent: d.boolean("sent").notNull().default(false), // basically flag to prevent spamming reminder
   deleted: d.boolean("deleted").notNull().default(false), // basically completed flag
+  isTask: d.boolean("is_task").notNull().default(false), // treats due date as deadline, doesn't notify
   title: d.text("title").notNull(),
   dueAt: timestamp("due_at", { withTimezone: true }),
   priority: d.text("priority", { enum: ['low', 'medium', 'high'] }).notNull().default('low'),

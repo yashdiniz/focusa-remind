@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
         })
         const rems = await db.query.reminders.findMany({
             where: (reminders, { lte, and, not, isNull, isNotNull, or }) => and(
-                not(reminders.deleted), or(isNotNull(reminders.rrule), and(isNull(reminders.rrule), not(reminders.sent))),
+                not(reminders.deleted), not(reminders.isTask),
+                or(isNotNull(reminders.rrule), and(isNull(reminders.rrule), not(reminders.sent))),
                 lte(reminders.dueAt, new Date(body.data.timestamp.getTime())),
             ),
             with: {
