@@ -1,0 +1,1 @@
+ALTER TABLE "focusa_remind_reminder" ADD COLUMN "is_task" boolean DEFAULT false NOT NULL;
