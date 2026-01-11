@@ -1,6 +1,6 @@
 # Focusa Remind
 
-Focusa Remind is a Telegram bot for creating and managing reminders with recurrence support, hosted on Vercel.
+Focusa Remind is a Telegram and Slack bot for creating and managing reminders with recurrence support, hosted on Vercel and using Vercel's [AI SDK](https://ai-sdk.dev/).
 
 ## Features
 
@@ -66,6 +66,7 @@ See `.env.example` for all required keys:
 - `DATABASE_URL` – Postgres connection string
 - `GROQ_API_KEY` – Groq API key for accessing models
 - `TELEGRAM_BOT_TOKEN` – Bot token from @BotFather
+- `SLACK_BOT_TOKEN` – Bot token from [Slack API](https://api.slack.com)
 
 ## Usage
 
